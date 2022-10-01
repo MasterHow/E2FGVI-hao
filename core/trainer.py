@@ -333,7 +333,23 @@ class Trainer:
                     blk_list=self.blk_list, hide_dim=self.hide_dim,
                     window_size=self.window_size, output_size=self.output_size)
         else:
-            self.netG = net.InpaintGenerator()
+            # e2fgvi/e2fgvi_hq
+            # 为了对不同分辨率训练进行定制，可以额外输入窗口个数等参数
+            # 定义trans block的window个数(token除以window划分大小)
+            if config['model']['window_size'] != 0:
+                self.window_size = config['model']['window_size']
+            else:
+                # 使用网络默认的window
+                self.window_size = None
+
+            # 定义trans block的输出大小
+            if config['model']['output_size'] != 0:
+                self.output_size = config['model']['output_size']
+            else:
+                # 使用网络默认的output_size
+                self.output_size = None
+
+            self.netG = net.InpaintGenerator(window_size=self.window_size, output_size=self.output_size)
         print(self.netG)
         self.netG = self.netG.to(self.config['device'])
         if not self.config['model']['no_dis']:

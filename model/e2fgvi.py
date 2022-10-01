@@ -131,7 +131,7 @@ class deconv(nn.Module):
 
 
 class InpaintGenerator(BaseNetwork):
-    def __init__(self, init_weights=True):
+    def __init__(self, init_weights=True, window_size=None, output_size=None):
         super(InpaintGenerator, self).__init__()
         channel = 256     # default
         hidden = 512     # default
@@ -156,7 +156,13 @@ class InpaintGenerator(BaseNetwork):
         kernel_size = (7, 7)
         padding = (3, 3)
         stride = (3, 3)
-        output_size = (60, 108)
+
+        if output_size is None:
+            # default
+            output_size = (60, 108)
+        else:
+            output_size = (output_size[0], output_size[1])
+
         t2t_params = {
             'kernel_size': kernel_size,
             'stride': stride,
@@ -180,8 +186,18 @@ class InpaintGenerator(BaseNetwork):
         blocks = []
         depths = 8    # default
         num_heads = [4] * depths
-        window_size = [(5, 9)] * depths
-        focal_windows = [(5, 9)] * depths
+
+        if window_size is None:
+            # default
+            window_size = [(5, 9)] * depths
+            focal_windows = [(5, 9)] * depths
+        else:
+            # customize
+            window_size_h = window_size[0]
+            window_size_w = window_size[1]
+            window_size = [(window_size_h, window_size_w)] * depths
+            focal_windows = [(window_size_h, window_size_w)] * depths
+
         focal_levels = [2] * depths
         pool_method = "fc"
 
