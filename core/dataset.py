@@ -24,7 +24,14 @@ class TrainDataset(torch.utils.data.Dataset):
         self.num_ref_frames = args['num_ref_frames']
         self.size = self.w, self.h = (args['w'], args['h'])
 
-        json_path = os.path.join(args['data_root'], args['name'], 'train.json')
+        if args['name'] != 'KITTI360-EX':
+            # default
+            json_path = os.path.join(args['data_root'], args['name'], 'train.json')
+            self.dataset_name = args['name']
+        else:
+            json_path = os.path.join(args['data_root'], 'train.json')
+            self.dataset_name = 'KITTI360-EX'
+
         with open(json_path, 'r') as f:
             self.video_dict = json.load(f)
         self.video_names = list(self.video_dict.keys())
@@ -55,8 +62,10 @@ class TrainDataset(torch.utils.data.Dataset):
     def load_item(self, index):
         video_name = self.video_names[index]
         # create masks
-        all_masks = create_random_shape_with_random_motion(
-            self.video_dict[video_name], imageHeight=self.h, imageWidth=self.w)
+        if self.dataset_name != 'KITTI360-EX':
+            # 对于非KITTI360-EX数据集，随机创建mask
+            all_masks = create_random_shape_with_random_motion(
+                self.video_dict[video_name], imageHeight=self.h, imageWidth=self.w)
 
         # create sample index
         selected_index = self._sample_index(self.video_dict[video_name],
@@ -67,16 +76,43 @@ class TrainDataset(torch.utils.data.Dataset):
         frames = []
         masks = []
         for idx in selected_index:
-            video_path = os.path.join(self.args['data_root'],
-                                      self.args['name'], 'JPEGImages',
-                                      f'{video_name}.zip')
+
+            if self.dataset_name != 'KITTI360-EX':
+                # default
+                video_path = os.path.join(self.args['data_root'],
+                                          self.args['name'], 'JPEGImages',
+                                          f'{video_name}.zip')
+            else:
+                video_path = os.path.join(self.args['data_root'],
+                                          'JPEGImages',
+                                          f'{video_name}.zip')
+
             img = TrainZipReader.imread(video_path, idx).convert('RGB')
             img = img.resize(self.size)
             frames.append(img)
-            masks.append(all_masks[idx])
+
+            if self.dataset_name != 'KITTI360-EX':
+                # default
+                masks.append(all_masks[idx])
+            else:
+                # 对于KITTI360-EX数据集，读取zip中存储的mask
+                mask_path = os.path.join(self.args['data_root'],
+                                         'test_masks',
+                                          f'{video_name}.zip')
+                mask = TrainZipReader.imread(mask_path, idx)
+                mask = mask.resize(self.size).convert('L')
+                mask = np.asarray(mask)
+                m = np.array(mask > 0).astype(np.uint8)
+                mask = Image.fromarray(m * 255)
+                masks.append(mask)
 
         # normalizate, to tensors
         frames = GroupRandomHorizontalFlip()(frames)
+
+        if self.dataset_name == 'KITTI360-EX':
+            # 对于本地读取的mask 也需要随着frame翻转
+            masks = GroupRandomHorizontalFlip()(masks)
+
         frame_tensors = self._to_tensors(frames) * 2.0 - 1.0
         mask_tensors = self._to_tensors(masks)
         return frame_tensors, mask_tensors, video_name

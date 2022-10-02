@@ -602,8 +602,8 @@ class Trainer:
         device = self.config['device']
 
         # temp for compare
-        # for frames, masks, _ in self.train_loader:
-        for frames, masks, video_name, index, start_index in self.train_loader:
+        for frames, masks, _ in self.train_loader:
+            # for frames, masks, video_name, index, start_index in self.train_loader:
             self.iteration += 1
 
             frames, masks = frames.to(device), masks.to(device)
