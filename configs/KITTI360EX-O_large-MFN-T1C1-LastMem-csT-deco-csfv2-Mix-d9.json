@@ -51,7 +51,9 @@
         "sw_list": 0,
         "head_list": 0,
         "blk_list": 0,
-        "hide_dim": 0
+        "hide_dim": 0,
+        "window_size": 0,
+        "output_size": 0
     },
     "trainer": {
         "type": "Adam",
@@ -62,7 +64,7 @@
         "num_workers": 4,
         "log_freq": 100,
         "save_freq": 5e3,
-        "iterations": 25e4,
+        "iterations": 50e4,
         "scheduler": {
             "type": "MultiStepLR",
             "milestones": [
