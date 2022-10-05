@@ -1314,7 +1314,7 @@ All average forward run time: (0.361344) per frame
 
 
 ############################KITTI360-EX#########################################
-# 直接上我认为最好的模型在KITTI360-EX Out上进行实验 [本地3090-250k] 第二阶段约需要
+# 直接上我认为最好的模型在KITTI360-EX Out上进行实验 [本地3090] 500k第二阶段约需要86.8h
 # 训练的mask没有进行腐蚀操作
 # 保留了E2FGVI默认的水平翻转 数据增强
 # 非局部帧只会从之前的帧中取到
@@ -1329,6 +1329,9 @@ All average forward run time: (0.047862) per frame[本地3090]
 All average forward run time: (0.047845) per frame[本地3090]
 似乎越难我们越有优势
 启用拧瓶盖战术，Flowlens正常训练，e2fgvi使用默认的逻辑进行训练
+[500k, Outer Fov5]
+[500k, Outer Fov10]
+[500k, Outer Fov20]
 
 # 对比默认的E2FGVI结构在KITTI360-EX Out的表现 [已停止360k次] 第一阶段约需要81.7h 第二阶段约需要
 CUDA_VISIBLE_DEVICES=1 python train.py -c configs/KITTI360EX-O_e2fgvi_baseline.json
@@ -1352,8 +1355,17 @@ CUDA_VISIBLE_DEVICES=1 python train.py -c configs/KITTI360EX-O_e2fgvi_baseline_d
 # FlowLens在KITTI360-EX In上进行实验 [tmux0] 约需要113h
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_large-MFN-T1C1-LastMem-csT-deco-csfv2-Mix-d9.json
 
-# E2FGVI在在KITTI360-EX In上进行实验 [3090Ti] 约需要82h
+# E2FGVI在在KITTI360-EX In上进行实验 [3090Ti第二阶段] 需要82h 第二阶段约需要h
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_e2fgvi_baseline.json
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model e2fgvi --ckpt release_model/e2fgvi_KITTI360EX-I_e2fgvi_baseline/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov5 --past_ref --timing --memory
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.73/0.9989/0.004
+All average forward run time: (0.035412) per frame[3090Ti]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.43/0.9957/0.021
+All average forward run time: (0.034786) per frame[3090Ti]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.56/0.9767/0.061
+All average forward run time: (0.034872) per frame[3090Ti]
+向内扩展比向外简单得多，两方面原因：1.球面相机模型的垂直视场角变化换算的图像面积小于针孔相机外圈面积 2.inpainting有两个方向的约束而outpainting是单向约束
 
 # 测试序列训练的dataloader逻辑在保存模型后是否正常，还是重新回归就那么几个视频。
 测试结果是保存模型不会影响序列装载的逻辑，所有的数据都被正常使用了。
@@ -1375,5 +1387,11 @@ CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/
 [250k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 30.20/0.9527/0.194
 All average forward run time: (0.048100) per frame[本地3090]
 没毛病家人们，拧瓶盖战术大大滴好
+
+# 测一下youtube-vos上面训练的e2fgvi在KEX-O上的精度
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model e2fgvi --ckpt release_model/e2fgvi_ablation_e2fgvi_baseline/gen_250000.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//OuterPinhole --fov fov20 --past_ref --timing --memory
+[250k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 15.66/0.8211/0.669
+All average forward run time: (0.034281) per frame[本地3090]
+嗯嗯，KITTI360-EX上训练还是有用的
 
 # 如果在KITTI360-EX上我们用那个小模型以bs4训练会怎么样呢？

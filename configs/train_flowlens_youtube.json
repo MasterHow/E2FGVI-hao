@@ -51,7 +51,9 @@
         "sw_list": 0,
         "head_list": 0,
         "blk_list": 0,
-        "hide_dim": 0
+        "hide_dim": 0,
+        "window_size": 0,
+        "output_size": 0
     },
     "trainer": {
         "type": "Adam",
