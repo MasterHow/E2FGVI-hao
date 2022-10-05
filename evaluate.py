@@ -17,7 +17,8 @@ from core.dataset import TestDataset
 from core.metrics import calc_psnr_and_ssim, calculate_i3d_activations, calculate_vfid, init_i3d_model
 
 # global variables
-w, h = 432, 240     # default acc. test setting in e2fgvi for davis dataset
+w, h = 432, 240     # default acc. test setting in e2fgvi for davis dataset and KITTI-EXO
+# w, h = 336, 336     # default acc. test setting for KITTI-EXI
 # w, h = 864, 480     # davis res 480x854
 # w, h = 320, 240     # pal test
 ref_length = 10     # non-local frames的步幅间隔，此处为每10帧取1帧NLF
