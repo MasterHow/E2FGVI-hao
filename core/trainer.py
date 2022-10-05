@@ -582,7 +582,7 @@ class Trainer:
             if self.config['distributed']:
                 self.train_sampler.set_epoch(self.epoch)
 
-            if not self.memory:
+            if self.config['train_data_loader']['sequence_load'] == 0:
                 self._train_epoch(pbar)
             else:
                 # 序列视频输入用于记忆力训练
