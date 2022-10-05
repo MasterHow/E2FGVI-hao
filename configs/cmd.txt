@@ -1347,13 +1347,28 @@ All average forward run time: (0.038023) per frame[矩池云3090]
 [500k, Outer Fov5]
 因为直接比似乎不是很理想，所以停止该实验，e2fgvi直接使用他默认的逻辑进行训练
 
-# 对比默认的E2FGVI结构在KITTI360-EX Out的表现 [tmux1] 500k约需要163.5h
+# 对比默认的E2FGVI结构在KITTI360-EX Out的表现 [tmux1暂停200k] 500k约需要163.5h
 # 使用E2FGVI的默认训练dataloader
 CUDA_VISIBLE_DEVICES=1 python train.py -c configs/KITTI360EX-O_e2fgvi_baseline_default-loader.json
 # 等到250k的时候比一下看看
+# 目前暂停了因为FlowLens加载模型之后突然没办法单卡开起来了(KEX-I), 所以就先用两张卡训练完再说了。
 
-# FlowLens在KITTI360-EX In上进行实验 [tmux0] 约需要113h
+# FlowLens在KITTI360-EX In上进行实验 [tmux0+tmux1第二阶段] 第一阶段需要114h 第二阶段约需要70h
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_large-MFN-T1C1-LastMem-csT-deco-csfv2-Mix-d9.json
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_large-MFN-T1C1-LastMem-csT-deco-csfv2-Mix-d9/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 43.09/0.9990/0.005
+All average forward run time: (0.051255) per frame[矩池云3090]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.79/0.9961/0.028
+All average forward run time: (0.051354) per frame[矩池云3090]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.94/0.9784/0.058
+All average forward run time: (0.050940) per frame
+[矩池云3090]
+没毛病，继续吧家人们
+奇怪的是我前250k训练都没有问题，什么都没改从250k加载到500k训练突然开不起来了？
+我就以bs2训练250k呢？
+没想到什么好办法，先用两张卡把250k-500k训练完再说吧。可能表现会有下降，为了公平起见e2fgvi也应该用两张卡训练？先看精度表现再说吧。。。烦死了
+如果效果不好就多跑100k吧，没办法本来对我对比也不够公平。
 
 # E2FGVI在在KITTI360-EX In上进行实验 [3090Ti第二阶段] 需要82h 第二阶段约需要h
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_e2fgvi_baseline.json
