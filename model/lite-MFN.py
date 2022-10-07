@@ -143,24 +143,28 @@ class InpaintGenerator(BaseNetwork):
                  cs_focal=False, cs_focal_v2=False, cs_trans=False, mix_f3n=False, conv_path=False,
                  cs_sw=False, pool_strip=False, pool_sw=1,
                  depths=None, sw_list=[], head_list=[], blk_list=[], hide_dim=None,
-                 window_size=None, output_size=None):
+                 window_size=None, output_size=None, small_model=False):
         super(InpaintGenerator, self).__init__()
 
         if hide_dim is None:
-            # large model:
-            channel = 256   # default
-            hidden = 512    # default
-            reduction = 1   # default
-
-            # small model
-            # channel = 64
-            # hidden = 128
-            # reduction = 2
+            if not small_model:
+                # large model:
+                channel = 256   # default
+                hidden = 512    # default
+                reduction = 1   # default
+            else:
+                # small model
+                channel = 64
+                hidden = 128
+                reduction = 2
         else:
-            # large model:
-            channel = 256  # default
-            hidden = hide_dim  # default
-            reduction = 1  # default
+            if not small_model:
+                # large model:
+                channel = 256  # default
+                hidden = hide_dim  # default
+                reduction = 1  # default
+            else:
+                raise Exception('Not support to customize small model yet.')
 
         # 设置transformer参数
         # 设置trans block的数量

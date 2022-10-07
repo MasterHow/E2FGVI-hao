@@ -263,6 +263,12 @@ class Trainer:
                 # 使用网络默认的output_size
                 self.output_size = None
 
+            # 定义是大模型还是小模型
+            if config['model']['small_model'] != 0:
+                self.small_model = True
+            else:
+                self.small_model = False
+
             if self.cs_trans:
                 # cs trans 主干需要的参数
 
@@ -316,7 +322,7 @@ class Trainer:
                     cs_trans=self.cs_trans, mix_f3n=self.mix_f3n, conv_path=self.conv_path, cs_sw=self.cs_sw,
                     pool_strip=self.pool_strip, pool_sw=self.pool_sw, depths=self.depths, sw_list=self.sw_list,
                     head_list=self.head_list, blk_list=self.blk_list, hide_dim=self.hide_dim,
-                    window_size=self.window_size, output_size=self.output_size)
+                    window_size=self.window_size, output_size=self.output_size, small_model=self.small_model)
             else:
                 # 使用tf主干
                 self.netG = net.InpaintGenerator(
@@ -331,7 +337,7 @@ class Trainer:
                     cs_focal_v2=self.cs_focal_v2,
                     cs_trans=self.cs_trans, mix_f3n=self.mix_f3n, depths=self.depths, head_list=self.head_list,
                     blk_list=self.blk_list, hide_dim=self.hide_dim,
-                    window_size=self.window_size, output_size=self.output_size)
+                    window_size=self.window_size, output_size=self.output_size, small_model=self.small_model)
         else:
             # e2fgvi/e2fgvi_hq
             # 为了对不同分辨率训练进行定制，可以额外输入窗口个数等参数

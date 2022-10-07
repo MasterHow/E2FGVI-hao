@@ -1314,7 +1314,7 @@ All average forward run time: (0.361344) per frame
 
 
 ############################KITTI360-EX#########################################
-# 直接上我认为最好的模型在KITTI360-EX Out上进行实验 [本地3090] 500k第二阶段约需要86.8h
+# 直接上我认为最好的模型在KITTI360-EX Out上进行实验 [已完成] 500k第二阶段约需要87h
 # 训练的mask没有进行腐蚀操作
 # 保留了E2FGVI默认的水平翻转 数据增强
 # 非局部帧只会从之前的帧中取到
@@ -1329,9 +1329,20 @@ All average forward run time: (0.047862) per frame[本地3090]
 All average forward run time: (0.047845) per frame[本地3090]
 似乎越难我们越有优势
 启用拧瓶盖战术，Flowlens正常训练，e2fgvi使用默认的逻辑进行训练
-[500k, Outer Fov5]
-[500k, Outer Fov10]
-[500k, Outer Fov20]
+[500k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 22.67/0.9763/0.203
+All average forward run time: (0.048346) per frame[本地3090]
+[500k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 19.56/0.9380/0.291
+All average forward run time: (0.047599) per frame[本地3090]
+[500k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.98/0.8658/0.386
+All average forward run time: (0.047700) per frame[本地3090]
+增加迭代次数还是能提升一下精度的
++水平翻转增强逻辑：
+[500k, Outer Fov5+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.42/0.9789/0.197
+All average forward run time: (0.147712) per frame[本地3090]
+[500k, Outer Fov10+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.36/0.9440/0.285
+All average forward run time: (0.147689) per frame[本地3090]
+[500k, Outer Fov20+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.71/0.8731/0.410
+All average forward run time: (0.147778) per frame[本地3090]
 
 # 对比默认的E2FGVI结构在KITTI360-EX Out的表现 [已停止360k次] 第一阶段约需要81.7h 第二阶段约需要
 CUDA_VISIBLE_DEVICES=1 python train.py -c configs/KITTI360EX-O_e2fgvi_baseline.json
@@ -1410,3 +1421,6 @@ All average forward run time: (0.034281) per frame[本地3090]
 嗯嗯，KITTI360-EX上训练还是有用的
 
 # 如果在KITTI360-EX上我们用那个小模型以bs4训练会怎么样呢？
+
+# 训练flow-lens小模型 [本地3090未开始] 约需要h
+python train.py -c configs/KITTI360EX-I_flowlens_small.json
