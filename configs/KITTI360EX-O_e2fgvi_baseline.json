@@ -20,7 +20,9 @@
     "model": {
         "net": "e2fgvi",
         "no_dis": 0,
-        "memory": 0
+        "memory": 0,
+        "window_size": 0,
+        "output_size": 0
     },
     "trainer": {
         "type": "Adam",
