@@ -96,7 +96,11 @@ def main_worker(args):
     model = net.InpaintGenerator().to(device)
     if args.ckpt is not None:
         data = torch.load(args.ckpt, map_location=device)
-        model.load_state_dict(data)
+        if args.model == 'fuseformer':
+            # fuseformer的ckpt额外嵌套了一层
+            model.load_state_dict(data['netG'])
+        else:
+            model.load_state_dict(data)
         print(f'Loading from: {args.ckpt}')
     model.eval()
 
@@ -217,7 +221,11 @@ def main_worker(args):
                 if args.timing:
                     torch.cuda.synchronize()
                     time_start = time.time()
-                pred_img, _ = model(masked_frames, len(neighbor_ids))   # forward里会输入局部帧数量来对两种数据分开处理
+                if args.model == 'fuseformer':
+                    # fuseformer不需要输入局部帧id因为没有分开处理
+                    pred_img = model(masked_frames)
+                else:
+                    pred_img, _ = model(masked_frames, len(neighbor_ids))   # forward里会输入局部帧数量来对两种数据分开处理
 
                 # 水平与竖直翻转增强
                 if args.reverse:
@@ -530,7 +538,7 @@ def main_worker(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='E2FGVI')
+    parser = argparse.ArgumentParser(description='FlowLens')
     parser.add_argument('--dataset',
                         choices=['davis', 'youtube-vos', 'pal', 'KITTI360-EX'],
                         type=str)       # 相当于train的‘name’
@@ -539,7 +547,8 @@ if __name__ == '__main__':
                         choices=['fov5', 'fov10', 'fov20'],
                         type=str)  # 对于KITTI360-EX, 测试需要输入fov
     parser.add_argument('--past_ref', action='store_true', default=False)  # 对于KITTI360-EX, 测试时只允许使用之前的参考帧
-    parser.add_argument('--model', choices=['e2fgvi', 'e2fgvi_hq', 'e2fgvi_hq-lite', 'lite-MFN', 'large-MFN'], type=str)
+    parser.add_argument('--model', choices=[
+        'e2fgvi', 'e2fgvi_hq', 'e2fgvi_hq-lite', 'lite-MFN', 'large-MFN', 'fuseformer'], type=str)
     parser.add_argument('--ckpt', type=str, default=None)
     parser.add_argument('--save_results', action='store_true', default=False)
     parser.add_argument('--num_workers', default=4, type=int)
