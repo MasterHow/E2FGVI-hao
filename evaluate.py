@@ -117,7 +117,13 @@ def main_worker(args):
         len_all = 0
 
     # create results directory
-    result_path = os.path.join('results', f'{args.model}_{args.dataset}')
+    # default
+    # result_path = os.path.join('results', f'{args.model}_{args.dataset}')
+    ckpt = args.ckpt.split('/')[-1]
+    if args.fov is not None:
+        result_path = os.path.join('results', f'{args.model}_{ckpt}_{args.fov}_{args.dataset}')
+    else:
+        result_path = os.path.join('results', f'{args.model}_{ckpt}_{args.dataset}')
     if not os.path.exists(result_path):
         os.makedirs(result_path)
     eval_summary = open(
