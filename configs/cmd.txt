@@ -1355,12 +1355,18 @@ All average forward run time: (0.051396) per frame[矩池云3090]
 [750k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.71/0.8611/0.373
 All average forward run time: (0.050921) per frame[矩池云3090]
 10和20都变差了，开始找最好的模型吧，这些输出都删掉不要了
-# 寻找最好的模型 那么其实inpainting也可以去找最好的模型 [tmux0 + tmux 1进行中]
+# 寻找最好的模型 那么其实inpainting也可以去找最好的模型 [已完成]
 sh ./configs/batch_eval.sh
+Best Model: 585000.pth
+[585k, Outer Fov5] 22.88/0.9775/0.199
+[585k, Outer Fov10] 19.6/0.939/0.271
+[585k, Outer Fov20] 16.83/0.8641/0.36
 [--reverse]
-[750k, Outer Fov5+][矩池云3090]
-[750k, Outer Fov10+][矩池云3090]
-[750k, Outer Fov20+][矩池云3090]
+[585k, Outer Fov5+]
+[585k, Outer Fov10+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.40/0.9448/0.277
+All average forward run time: (0.160181) per frame[矩池云3090]
+[585k, Outer Fov20+]
+
 
 
 # 对比默认的E2FGVI结构在KITTI360-EX Out的表现 bs2 500k [已完成] 第一阶段约需要81.7h 第二阶段约需要
@@ -1410,6 +1416,7 @@ All average forward run time: (0.038992) per frame[矩池云3090]
 默认逻辑训练e2fgvi更好了。。。
 还是用上面那个跑完500k吧
 
+
 # FlowLens在KITTI360-EX In上进行实验 [已完成] 第一阶段需要114h 第二阶段约需要70h
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_large-MFN-T1C1-LastMem-csT-deco-csfv2-Mix-d9.json
 序列测试+只使用之前的参考帧:
@@ -1451,6 +1458,7 @@ python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/Flow
 [500k, Inner Fov10 + reverse]Average Warping Error = 0.003581[矩池云P100]
 [500k, Inner Fov20 + reverse]Average Warping Error = 0.003621[矩池云P100]
 
+
 # E2FGVI在在KITTI360-EX In上进行实验 [已完成] 需要82h 第二阶段约需要81h
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_e2fgvi_baseline.json
 序列测试+只使用之前的参考帧:
@@ -1478,12 +1486,15 @@ python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/e2fg
 # 测试序列训练的dataloader逻辑在保存模型后是否正常，还是重新回归就那么几个视频。
 测试结果是保存模型不会影响序列装载的逻辑，所有的数据都被正常使用了。
 
+
 # 测试多卡的序列装载训练逻辑
 测试完成bs4 双卡
 每个dataloader的初始index随机。
 
-# 4卡训练FlowLens在youtube上 [未开始]
+
+# 4卡训练FlowLens在youtube上 [进行中]
 python train.py -c configs/train_flowlens_youtube.json
+
 
 # 测试默认逻辑训练的e2fgvi序列推理，对比序列逻辑训练的flowlens序列推理的能力
 # 默认训练e2fgvi序列推理
@@ -1496,17 +1507,21 @@ CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/
 All average forward run time: (0.048100) per frame[本地3090]
 没毛病家人们，拧瓶盖战术大大滴好
 
+
 # 测一下youtube-vos上面训练的e2fgvi在KEX-O上的精度
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model e2fgvi --ckpt release_model/e2fgvi_ablation_e2fgvi_baseline/gen_250000.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//OuterPinhole --fov fov20 --past_ref --timing --memory
 [250k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 15.66/0.8211/0.669
 All average forward run time: (0.034281) per frame[本地3090]
 嗯嗯，KITTI360-EX上训练还是有用的
 
+
 # 如果在KITTI360-EX上我们用那个小模型以bs4训练会怎么样呢？
+
 
 # 训练flow-lens小模型 [暂停130k] 约需要180h
 # bs4 lr0.5 3层
 python train.py -c configs/KITTI360EX-I_flowlens_small.json
+
 
 # 训练FuseFormer KITTI-EX-O bs2 500k [已完成] 约需要78.5h
 # 432 240
@@ -1519,11 +1534,12 @@ All average forward run time: (0.025093) per frame[3090Ti]
 [500k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.14/0.8389/0.514
 All average forward run time: (0.025012) per frame[3090Ti]
 # 测试E-warp
-python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXO-Fov5/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
-python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXO-Fov5/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
-[500k, Outer Fov5]eval ing[矩池云P100]
-[500k, Outer Fov10][矩池云P100]
-[500k, Outer Fov20][矩池云P100]
+python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXO-Fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXO-Fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[500k, Outer Fov5]Average Warping Error = 0.005523[矩池云P100]
+[500k, Outer Fov10]Average Warping Error = 0.006775[矩池云P100]
+[500k, Outer Fov20]Average Warping Error = 0.008901[矩池云P100]
+
 
 # 训练FuseFormer KITTI-EX-I bs2 500k [已完成] 约需要70.5h
 # 336 336
@@ -1536,11 +1552,11 @@ All average forward run time: (0.030661) per frame[本地3090]
 [500k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 27.45/0.9712/0.078
 All average forward run time: (0.030627) per frame[本地3090]
 # 测试E-warp
-python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXO-Fov5/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
-python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXO-Fov5/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
-[500k, Outer Fov5][矩池云P100]
-[500k, Outer Fov10][矩池云P100]
-[500k, Outer Fov20][矩池云P100]
+python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXI-Fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXI-Fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[500k, Outer Fov5]Average Warping Error = 0.003650[矩池云P100]
+[500k, Outer Fov10]Average Warping Error = 0.003771[矩池云P100]
+[500k, Outer Fov20]Average Warping Error = 0.004102[矩池云P100]
 
 # 训练STTN KITTI-EX-O bs2 500k [3090Ti] 约需要h
 
