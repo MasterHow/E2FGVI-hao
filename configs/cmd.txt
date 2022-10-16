@@ -1611,7 +1611,7 @@ python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuse
 [500k, Inner Fov10]Average Warping Error = 0.003771[矩池云P100]
 [500k, Inner Fov20]Average Warping Error = 0.004102[矩池云P100]
 
-# 训练STTN KITTI-EX-O bs2 500k [3090Ti] 约需要h
+# 训练STTN KITTI-EX-O bs2 500k [已完成310k] 约需要h
 --model sttn --ckpt release_model/sttn_kitti360ex-o\gen_00025.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//OuterPinhole --fov fov10 --past_ref --timing --memory --save_results --model_output_size 108 60
 [250k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.31/0.9684/0.275
 All average forward run time: (0.020923) per frame[本地3090]
@@ -1641,7 +1641,15 @@ All average forward run time: (0.022049) per frame[本地3090]
 [250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.82/0.9785/0.048
 All average forward run time: (0.022184) per frame[本地3090]
 
-[450k, Inner Fov5-re]
+# 训练QueryOTR bs2 [本地3090] 约需要h
+
+# 消融实验 循环层位置 KEXI 250k [本地3090Ti] 约需要96h
+只使用8层blk，在第一层加入循环
+
+# 消融实验 循环层位置 KEXI 250k [矩池云3090-tmux0] 约需要h
+只使用8层blk，在中间层加入循环
+CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_middle.json
+
 
 
 
