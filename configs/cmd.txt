@@ -1362,10 +1362,35 @@ Best Model: 585000.pth
 [585k, Outer Fov10] 19.6/0.939/0.271
 [585k, Outer Fov20] 16.83/0.8641/0.36
 [--reverse]
-[585k, Outer Fov5+]
+[585k, Outer Fov5+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.52/0.9795/0.197
 [585k, Outer Fov10+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.40/0.9448/0.277
 All average forward run time: (0.160181) per frame[矩池云3090]
-[585k, Outer Fov20+]
+[585k, Outer Fov20+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.64/0.8728/0.402
+All average forward run time: (0.155277) per frame
+# 忙活半天FlowLens+最难的场景没有原来结果好了，麻了
+# 在400k和500k之间再找一次最好的模型
+# 找到新的最好模型480000.pth
+[480k, Outer Fov5] Finish evaluation... Average Frame PSNR/SSIM/VFID: 22.67/0.9765/0.202
+[480k, Outer Fov10] Finish evaluation... Average Frame PSNR/SSIM/VFID: 19.60/0.9383/0.269
+[480k, Outer Fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.04/0.8672/0.363
+[480k, Avg] 19.77 0.9273 0.278
+[--reverse]
+[480k, Outer Fov5+] Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.39/0.9789/0.189
+[480k, Outer Fov10+] Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.39/0.9445/0.280
+[480k, Outer Fov20+] Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.73/0.8743/0.411
+[480k, Avg+] 20.50 0.9326 0.293
+# 测试E-warp
+python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_gen_480000.pth_fov20_KITTI360-EXO/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_gen_480000.pth_fov20_KITTI360-EXO/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+
+[480k, Outer Fov5]Average Warping Error = 0.004977[矩池云P100]
+[480k, Outer Fov10]Average Warping Error = 0.005480[矩池云P100]
+[480k, Outer Fov20]Average Warping Error = 0.006286[矩池云P100]
+# 测试FlowLens+ E-warp [--reverse]
+[480k, Outer Fov5 + reverse]Average Warping Error = 0.003999[矩池云P100]
+[480k, Outer Fov10 + reverse]Average Warping Error = 0.003980[矩池云P100]
+[480k, Outer Fov20 + reverse]Average Warping Error = 0.004093[矩池云P100]
+
 
 
 
@@ -1399,6 +1424,12 @@ python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/e2fg
 [500k, Outer Fov5]Average Warping Error = 0.004778[矩池云P100]
 [500k, Outer Fov10]Average Warping Error = 0.005635[矩池云P100]
 [500k, Outer Fov20]Average Warping Error = 0.007034[矩池云P100]
+# 测试E-warp
+python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/e2fgvi_gen_250000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/e2fgvi_gen_250000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[250k, Outer Fov5]Average Warping Error = 0.004962[矩池云P100]
+[250k, Outer Fov10]Average Warping Error = 0.005411[矩池云P100]
+[250k, Outer Fov20]Average Warping Error = 0.005918[矩池云P100]
 
 
 # 对比默认的E2FGVI结构在KITTI360-EX Out的表现 [已停止255k] 500k约需要163.5h
@@ -1457,7 +1488,29 @@ python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/Flow
 [500k, Inner Fov5 + reverse]Average Warping Error = 0.003582[矩池云P100]
 [500k, Inner Fov10 + reverse]Average Warping Error = 0.003581[矩池云P100]
 [500k, Inner Fov20 + reverse]Average Warping Error = 0.003621[矩池云P100]
+# 通过测试各个ckpt找到415000是最好的
+[415k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 44.11/0.9992/0.003[矩池云3090]
+[415k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 37.14/0.9963/0.024[矩池云3090]
+[415k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.93/0.9788/0.059[矩池云3090]
 
+[415k, Inner Fov5+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 44.78/0.9993/0.003[矩池云3090]
+[415k, Inner Fov10+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 37.91/0.9969/0.014[矩池云3090]
+[415k, Inner Fov20+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.91/0.9821/0.037
+All average forward run time: (0.160397) per frame[矩池云3090]
+# 测试E-warp
+python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens_gen_415000.pth_fov20_KITTI360-EXI/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens_gen_415000.pth_fov20_KITTI360-EXI/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+
+python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_gen_415000.pth_fov20_KITTI360-EXI/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_gen_415000.pth_fov20_KITTI360-EXI/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+
+[415k, Inner Fov5]Average Warping Error = 0.003594[矩池云P100]
+[415k, Inner Fov10]Average Warping Error = 0.003630[矩池云P100]
+[415k, Inner Fov20]Average Warping Error = 0.003846[矩池云P100]
+# 测试FlowLens+ E-warp [--reverse]
+[415k, Inner Fov5 + reverse]Average Warping Error = 0.003582[矩池云P100]
+[415k, Inner Fov10 + reverse]Average Warping Error = 0.003581[矩池云P100]
+[415k, Inner Fov20 + reverse]Average Warping Error = 0.003611[矩池云P100]
 
 # E2FGVI在在KITTI360-EX In上进行实验 [已完成] 需要82h 第二阶段约需要81h
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_e2fgvi_baseline.json
@@ -1554,13 +1607,42 @@ All average forward run time: (0.030627) per frame[本地3090]
 # 测试E-warp
 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXI-Fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuseformer_KITTI360-EXI-Fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
-[500k, Outer Fov5]Average Warping Error = 0.003650[矩池云P100]
-[500k, Outer Fov10]Average Warping Error = 0.003771[矩池云P100]
-[500k, Outer Fov20]Average Warping Error = 0.004102[矩池云P100]
+[500k, Inner Fov5]Average Warping Error = 0.003650[矩池云P100]
+[500k, Inner Fov10]Average Warping Error = 0.003771[矩池云P100]
+[500k, Inner Fov20]Average Warping Error = 0.004102[矩池云P100]
 
 # 训练STTN KITTI-EX-O bs2 500k [3090Ti] 约需要h
+--model sttn --ckpt release_model/sttn_kitti360ex-o\gen_00025.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//OuterPinhole --fov fov10 --past_ref --timing --memory --save_results --model_output_size 108 60
+[250k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.31/0.9684/0.275
+All average forward run time: (0.020923) per frame[本地3090]
+# 用个310k吧，反正都很差，用个最好的呗
+[310k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.34/0.9685/0.269
+All average forward run time: (0.020871) per frame[本地3090]
+[310k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 18.73/0.9232/0.342
+All average forward run time: (0.020938) per frame[本地3090]
+[310k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.13/0.8317/0.501
+All average forward run time: (0.021187) per frame[本地3090]
 
-# 训练STTN KITTI-EX-I bs2 500k [3090] 约需要h
+# 训练STTN KITTI-EX-I bs2 500k [已完成450k] 约需要87h
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model sttn --ckpt release_model/sttn_kitti360ex-i\gen_00045.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//InnerSphere --fov fov5 --past_ref --timing --memory --save_results --output_size 336 336 --model_output_size 84 84
+Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.46/0.9989/0.006
+[450k, Inner Fov5] All average forward run time: (0.022103) per frame [本地3090]
+[450k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.28/0.9958/0.015
+All average forward run time: (0.022397) per frame[本地3090]
+[450k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.81/0.9783/0.047
+All average forward run time: (0.022095) per frame[本地3090]
+STTN在这个任务上的表现异常的好
+[400k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.80/0.9783/0.045
+All average forward run time: (0.022147) per frame[本地3090]
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.49/0.9989/0.005
+All average forward run time: (0.022038) per frame[本地3090]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.26/0.9957/0.015
+All average forward run time: (0.022049) per frame[本地3090]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.82/0.9785/0.048
+All average forward run time: (0.022184) per frame[本地3090]
+
+[450k, Inner Fov5-re]
+
 
 
 
