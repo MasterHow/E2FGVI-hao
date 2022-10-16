@@ -17,6 +17,7 @@ from core.dataset import TestDataset
 from core.metrics import calc_psnr_and_ssim, calculate_i3d_activations, calculate_vfid, init_i3d_model
 
 # global variables
+# w h can be changed by args.output_size
 w, h = 432, 240     # default acc. test setting in e2fgvi for davis dataset and KITTI-EXO
 # w, h = 336, 336     # default acc. test setting for KITTI-EXI
 # w, h = 864, 480     # davis res 480x854
@@ -78,6 +79,8 @@ def get_ref_index_mem_random(neighbor_ids, video_length, num_ref_frame=3, before
 
 
 def main_worker(args):
+    w = args.output_size[0]
+    h = args.output_size[1]
     args.size = (w, h)
     # set up datasets and data loader
     # default result
@@ -93,11 +96,19 @@ def main_worker(args):
     # set up models
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     net = importlib.import_module('model.' + args.model)
-    model = net.InpaintGenerator().to(device)
+    try:
+        # 加载一些尺寸窗口设置
+        model = net.InpaintGenerator(window_size=args.model_win_size, output_size=args.model_output_size).to(device)
+    except:
+        try:
+            # 加载一些尺寸窗口设置,sttn和fuseformer不需要window_size参数
+            model = net.InpaintGenerator(output_size=args.model_output_size).to(device)
+        except:
+            model = net.InpaintGenerator().to(device)
     if args.ckpt is not None:
         data = torch.load(args.ckpt, map_location=device)
-        if args.model == 'fuseformer':
-            # fuseformer的ckpt额外嵌套了一层
+        if (args.model == 'fuseformer') or (args.model == 'sttn'):
+            # sttn和fuseformer的gen ckpt额外嵌套了一层netG
             model.load_state_dict(data['netG'])
         else:
             model.load_state_dict(data)
@@ -117,7 +128,16 @@ def main_worker(args):
         len_all = 0
 
     # create results directory
-    result_path = os.path.join('results', f'{args.model}_{args.dataset}')
+    # default
+    # result_path = os.path.join('results', f'{args.model}_{args.dataset}')
+    ckpt = args.ckpt.split('/')[-1]
+    if args.fov is not None:
+        if args.reverse:
+            result_path = os.path.join('results', f'{args.model}+_{ckpt}_{args.fov}_{args.dataset}')
+        else:
+            result_path = os.path.join('results', f'{args.model}_{ckpt}_{args.fov}_{args.dataset}')
+    else:
+        result_path = os.path.join('results', f'{args.model}_{ckpt}_{args.dataset}')
     if not os.path.exists(result_path):
         os.makedirs(result_path)
     eval_summary = open(
@@ -224,6 +244,9 @@ def main_worker(args):
                 if args.model == 'fuseformer':
                     # fuseformer不需要输入局部帧id因为没有分开处理
                     pred_img = model(masked_frames)
+                elif args.model == 'sttn':
+                    # sttn的前向需要同时输入mask_frames和mask
+                    pred_img = model(masked_frames, selected_masks)
                 else:
                     pred_img, _ = model(masked_frames, len(neighbor_ids))   # forward里会输入局部帧数量来对两种数据分开处理
 
@@ -543,12 +566,13 @@ if __name__ == '__main__':
                         choices=['davis', 'youtube-vos', 'pal', 'KITTI360-EX'],
                         type=str)       # 相当于train的‘name’
     parser.add_argument('--data_root', type=str, required=True)
+    parser.add_argument('--output_size', type=int, nargs='+', default=[432, 240])
     parser.add_argument('--fov',
                         choices=['fov5', 'fov10', 'fov20'],
                         type=str)  # 对于KITTI360-EX, 测试需要输入fov
     parser.add_argument('--past_ref', action='store_true', default=False)  # 对于KITTI360-EX, 测试时只允许使用之前的参考帧
     parser.add_argument('--model', choices=[
-        'e2fgvi', 'e2fgvi_hq', 'e2fgvi_hq-lite', 'lite-MFN', 'large-MFN', 'fuseformer'], type=str)
+        'e2fgvi', 'e2fgvi_hq', 'e2fgvi_hq-lite', 'lite-MFN', 'large-MFN', 'fuseformer', 'sttn'], type=str)
     parser.add_argument('--ckpt', type=str, default=None)
     parser.add_argument('--save_results', action='store_true', default=False)
     parser.add_argument('--num_workers', default=4, type=int)
@@ -563,6 +587,8 @@ if __name__ == '__main__':
     parser.add_argument('--memory_fifth', action='store_true', default=False, help='test with memory ability five times')
     parser.add_argument('--reverse', action='store_true', default=False,
                         help='test with horizontal and vertical reverse augmentation')
+    parser.add_argument('--model_win_size', type=int, nargs='+', default=[5, 9])
+    parser.add_argument('--model_output_size', type=int, nargs='+', default=[60, 108])
     args = parser.parse_args()
 
     if args.dataset == 'KITTI360-EX':
