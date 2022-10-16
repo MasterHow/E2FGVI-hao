@@ -100,11 +100,15 @@ def main_worker(args):
         # 加载一些尺寸窗口设置
         model = net.InpaintGenerator(window_size=args.model_win_size, output_size=args.model_output_size).to(device)
     except:
-        model = net.InpaintGenerator().to(device)
+        try:
+            # 加载一些尺寸窗口设置,sttn和fuseformer不需要window_size参数
+            model = net.InpaintGenerator(output_size=args.model_output_size).to(device)
+        except:
+            model = net.InpaintGenerator().to(device)
     if args.ckpt is not None:
         data = torch.load(args.ckpt, map_location=device)
-        if args.model == 'fuseformer':
-            # fuseformer的ckpt额外嵌套了一层
+        if (args.model == 'fuseformer') or (args.model == 'sttn'):
+            # sttn和fuseformer的gen ckpt额外嵌套了一层netG
             model.load_state_dict(data['netG'])
         else:
             model.load_state_dict(data)
@@ -240,6 +244,9 @@ def main_worker(args):
                 if args.model == 'fuseformer':
                     # fuseformer不需要输入局部帧id因为没有分开处理
                     pred_img = model(masked_frames)
+                elif args.model == 'sttn':
+                    # sttn的前向需要同时输入mask_frames和mask
+                    pred_img = model(masked_frames, selected_masks)
                 else:
                     pred_img, _ = model(masked_frames, len(neighbor_ids))   # forward里会输入局部帧数量来对两种数据分开处理
 
@@ -565,7 +572,7 @@ if __name__ == '__main__':
                         type=str)  # 对于KITTI360-EX, 测试需要输入fov
     parser.add_argument('--past_ref', action='store_true', default=False)  # 对于KITTI360-EX, 测试时只允许使用之前的参考帧
     parser.add_argument('--model', choices=[
-        'e2fgvi', 'e2fgvi_hq', 'e2fgvi_hq-lite', 'lite-MFN', 'large-MFN', 'fuseformer'], type=str)
+        'e2fgvi', 'e2fgvi_hq', 'e2fgvi_hq-lite', 'lite-MFN', 'large-MFN', 'fuseformer', 'sttn'], type=str)
     parser.add_argument('--ckpt', type=str, default=None)
     parser.add_argument('--save_results', action='store_true', default=False)
     parser.add_argument('--num_workers', default=4, type=int)
