@@ -154,6 +154,12 @@ class Trainer:
                 else:
                     self.last_memory = False
 
+                # 是否只有第一层blk装备记忆力
+                if config['model']['early_memory'] != 0:
+                    self.early_memory = True
+                else:
+                    self.early_memory = False
+
                 # 是否使用cross attention融合记忆与当前特征(在Nh Nw维度流动信息)
                 if config['model']['cross_att'] != 0:
                     self.cross_att = True
@@ -316,6 +322,7 @@ class Trainer:
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
                     store_lf=self.store_lf, align_cache=self.align_cache, sub_token_align=self.sub_token_align,
                     sub_factor=self.sub_factor, half_memory=self.half_memory, last_memory=self.last_memory,
+                    early_memory=self.early_memory,
                     cross_att=self.cross_att, time_att=self.time_att, time_deco=self.time_deco,
                     temp_focal=self.temp_focal, cs_win=self.cs_win, mem_att=self.mem_att, cs_focal=self.cs_focal,
                     cs_focal_v2=self.cs_focal_v2,
@@ -332,6 +339,7 @@ class Trainer:
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
                     store_lf=self.store_lf, align_cache=self.align_cache, sub_token_align=self.sub_token_align,
                     sub_factor=self.sub_factor, half_memory=self.half_memory, last_memory=self.last_memory,
+                    early_memory=self.early_memory,
                     cross_att=self.cross_att, time_att=self.time_att, time_deco=self.time_deco,
                     temp_focal=self.temp_focal, cs_win=self.cs_win, mem_att=self.mem_att, cs_focal=self.cs_focal,
                     cs_focal_v2=self.cs_focal_v2,
