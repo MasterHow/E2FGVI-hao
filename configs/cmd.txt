@@ -1622,6 +1622,13 @@ All average forward run time: (0.020871) per frame[本地3090]
 All average forward run time: (0.020938) per frame[本地3090]
 [310k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.13/0.8317/0.501
 All average forward run time: (0.021187) per frame[本地3090]
+# 测试E-warp [cuda0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/sttn_gen_00031.pth_fov20_KITTI360-EXO/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/sttn_gen_00031.pth_fov20_KITTI360-EXO/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[310k, Outer Fov5]Average Warping Error = 0.005248[矩池云P100]
+[310k, Outer Fov10]Average Warping Error = 0.006208[矩池云P100]
+[310k, Outer Fov20]Average Warping Error = 0.008154[矩池云P100]
+
 
 # 训练STTN KITTI-EX-I bs2 500k [已完成450k] 约需要87h
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model sttn --ckpt release_model/sttn_kitti360ex-i\gen_00045.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//InnerSphere --fov fov5 --past_ref --timing --memory --save_results --output_size 336 336 --model_output_size 84 84
@@ -1640,15 +1647,27 @@ All average forward run time: (0.022038) per frame[本地3090]
 All average forward run time: (0.022049) per frame[本地3090]
 [250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.82/0.9785/0.048
 All average forward run time: (0.022184) per frame[本地3090]
+# 测试E-warp [cuda1]
+CUDA_VISIBLE_DEVICES=1 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/sttn_gen_00045.pth_fov20_KITTI360-EXI/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/sttn_gen_00045.pth_fov20_KITTI360-EXI/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+[450k, Inner Fov5]Average Warping Error = 0.003623[矩池云P100]
+[450k, Inner Fov10]Average Warping Error = 0.003701[矩池云P100]
+[450k, Inner Fov20]Average Warping Error = 0.003864[矩池云P100]
 
-# 训练QueryOTR bs2 [本地3090] 约需要h
+# 训练QueryOTR bs2 [暂未开始] 约需要h
 
-# 消融实验 循环层位置 KEXI 250k [本地3090Ti] 约需要96h
+# 消融实验 循环层位置 KEXI 250k [本地3090Ti] 约需要91h
 只使用8层blk，在第一层加入循环
 
 # 消融实验 循环层位置 KEXI 250k [矩池云3090-tmux0] 约需要h
 只使用8层blk，在中间层加入循环
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_middle.json
+
+# 消融实验 循环层位置 KEXI 250k [本地3090] 约需要h
+只使用6层blk，使用8层会爆炸，所有层都有循环
+python train.py -c configs/KITTI360EX-I_FlowLens_ablation_all.json
+
+
 
 
 
