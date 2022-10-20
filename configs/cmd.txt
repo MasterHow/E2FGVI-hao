@@ -1669,6 +1669,106 @@ python train.py -c configs/KITTI360EX-I_FlowLens_ablation_all.json
 
 
 
+# MISF
+Out
+使用Places.
+--dataset KITTI360-EXO --gt_root D:\MyProject\PyThon\FlowInpainting\misf\data\KITTI360-EX\OuterPinhole\imgs\ --complete_root D:\MyProject\PyThon\FlowInpainting\misf\data\KITTI360-EX\OuterPinhole\results\170k\fov20\ --fov fov20 --model
+MISF-170k
+[350k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.26/0.9542/0.273[本地3070Ti]
+[350k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 18.68/0.9084/0.362[本地3070Ti]
+[350k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.58/0.8294/0.502[本地3070Ti]
+# 测试E-warp [cuda0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXO-places/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXO-places/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[350k, Outer Fov5]Average Warping Error = 0.003201[矩池云P100]
+[350k, Outer Fov10]Average Warping Error = 0.003525[矩池云P100]
+[350k, Outer Fov20]Average Warping Error = 0.003715[矩池云P100]
+微调
+[390k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.38/0.9548/0.271[本地3070Ti]
+[390k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 18.80/0.9108/0.370[本地3070Ti]
+[390k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.75/0.8365/0.437[本地3070Ti]
+In
+微调50k 不如 Places. 因此使用Places.
+[350k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.37/0.9681/0.063[本地3070Ti]
+[350k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.04/0.9655/0.069[本地3070Ti]
+[350k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 24.64/0.9508/0.093[本地3070Ti]
+# 测试E-warp [cuda1]
+CUDA_VISIBLE_DEVICES=1 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXI-places/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXI-places/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+[350k, Inner Fov5]Average Warping Error = 0.002040[矩池云P100]
+[350k, Inner Fov10]Average Warping Error = 0.002097[矩池云P100]
+[350k, Inner Fov20]Average Warping Error = 0.002255[矩池云P100]
+微调
+[400k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.37/0.9681/0.064[本地3070Ti]
+[400k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.03/0.9654/0.069[本地3070Ti]
+[400k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 24.43/0.9489/0.093[本地3070Ti]
+扭曲误差小只能说明外侧基本上没什么变化，需要重新训练才行。
+
+# 重新训练MISF
+各250k bs4 lr/4 因为原文bs16
+KEXO[本地3070Ti] 暂停170k 约需要34h
+[170k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.61/0.8318/0.470[本地3070Ti]
+# 测试E-warp [cuda0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/MISF-170k-KEXO-fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/MISF-170k-KEXO-fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[170k, Outer Fov5][矩池云P100]
+[170k, Outer Fov10][矩池云P100]
+[170k, Outer Fov20]Average Warping Error = 0.002728[矩池云P100]
+视频更稳定，但是更不真实。都很假也是一种稳定。
+KEXI[本地3060] 训练中 约需要41h
+
+[170k, Outer Fov20, input512]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.10/0.8369/0.687[本地3070Ti] 不错哦
+[350k, Outer Fov20, input512]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.59/0.8412/0.556[本地3070Ti] Places 泛化很强。
+[390k, Outer Fov20, input512][本地3070Ti] fine-tune
+
+
+
+
+# lama
+python3 bin/predict.py model.path=$(pwd)/big-lama indir=$(pwd)/KITTI360-EX-test/InnerSphere/fov20 outdir=$(pwd)/KITTI360-EX-output/InnerSphere/fov20
+[best, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 40.20/0.9986/0.004[矩池云2080Ti]
+[best, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 35.89/0.9957/0.016[矩池云2080Ti]
+[best, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.15/0.9798/0.047[矩池云2080Ti] 28.13
+
+# inner的时候没有用336 336测试！重新测一下inner
+[best, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.05/0.9808/0.036[矩池云2080Ti] 28.13
+
+[best, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 22.13/0.9757/0.231[矩池云2080Ti]
+[best, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 19.08/0.9314/0.336[矩池云2080Ti]
+[best, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.09/0.8568/0.395[矩池云2080Ti]
+# 推测和推理的尺度有关系。。。因为推理的时候实际上输入的尺寸就比我原来的大！正确的做法是用一样的原始图片尺寸输入模型重新测试！
+
+# 重新用低分辨率的图像推理，并且在目标分辨率上测试
+# 如此说来，我模型的输入把分辨率调高岂不是可以获得更高的指标？？？？
+export TORCH_HOME=$(pwd) && export PYTHONPATH=$(pwd)
+python3 bin/predict.py model.path=$(pwd)/big-lama indir=$(pwd)/KITTI360-EX-test/OuterPinhole/fov20 outdir=$(pwd)/KITTI360-EX-output-low/OuterPinhole/fov20
+python eval_from_folder.py --dataset KITTI360-EXO --gt_root /mnt/WORKSPACE/lama/KITTI360-EX-test-refer/OuterPinhole/gt/ --complete_root /mnt/WORKSPACE/lama/KITTI360-EX-output-low/OuterPinhole/fov20/ --fov fov20 --model lama-best
+--output_size 336 336
+
+[best, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 34.41/0.9946/0.015[矩池云2080Ti]
+[best, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.62/0.9918/0.020[矩池云2080Ti]
+[best, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.03/0.9764/0.043[矩池云2080Ti]
+# 看来高分辨输入，高分辨输出降采样到低分辨率是会保留亚像素信息带来更高的精度的
+# 所有的对比输入的分辨率都是336 336；432 240
+# 测试E-warp [cuda0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/lama/KITTI360-EX-output-low/InnerSphere/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/lama/KITTI360-EX-output-low/InnerSphere/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[best, Inner Fov5]Average Warping Error = 0.003570[矩池云P100]
+[best, Inner Fov10]Average Warping Error = 0.003655[矩池云P100]
+[best, Inner Fov20]Average Warping Error = 0.003961[矩池云P100]
+
+[best, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.47/0.9615/0.279[矩池云2080Ti]
+[best, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 18.76/0.9183/0.372[矩池云2080Ti]
+[best, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.73/0.8420/0.414[矩池云2080Ti]
+
+# 测试E-warp [cuda1]
+CUDA_VISIBLE_DEVICES=1 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/lama/KITTI360-EX-output-low/OuterPinhole/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/lama/KITTI360-EX-output-low/OuterPinhole/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+[best, Outer Fov5]Average Warping Error = 0.005157[矩池云P100]
+[best, Outer Fov10]Average Warping Error = 0.005831[矩池云P100]
+[best, Outer Fov20]Average Warping Error = 0.006419[矩池云P100]
+
+
 
 
 

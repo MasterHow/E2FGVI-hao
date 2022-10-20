@@ -65,7 +65,7 @@ def main_worker(args):
 
         # 我们的图像是png格式
         frame_list = glob.glob(os.path.join(frame_dir, "*.png"))
-        gt_frame_list = glob.glob(os.path.join(gt_frame_dir, "*.jpg"))
+        # gt_frame_list = glob.glob(os.path.join(gt_frame_dir, "*.jpg"))
 
         video_length = len(frame_list)
         comp_frames = []    # 补全帧
@@ -76,10 +76,13 @@ def main_worker(args):
 
             ### load input images
             # 我们是png格式的哦
-            filename = os.path.join(frame_dir, "%05d.png" % t)
+            filename = os.path.join(frame_dir, "%05d.png" % t)    # misf
+            # filename = os.path.join(frame_dir, "%08d.png" % t)     # lama
             comp_frame = cv2.imread(filename)
+            comp_frame = cv2.resize(comp_frame, (w, h))
             comp_frames.append(comp_frame)
-            filename = os.path.join(gt_frame_dir, "%06d.jpg" % t)
+            filename = os.path.join(gt_frame_dir, "%06d.jpg" % t)     # misf
+            # filename = os.path.join(gt_frame_dir, "%08d.jpg" % t)       # lama
             gt_frame = cv2.imread(filename)
             # resize gt
             gt_frame = cv2.resize(gt_frame, (w, h))
@@ -138,9 +141,7 @@ def main_worker(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='FlowLens')
-    parser.add_argument('--dataset',
-                        choices=['davis', 'youtube-vos', 'pal', 'KITTI360-EX'],
-                        type=str)       # 相当于train的‘name’
+    parser.add_argument('--dataset', type=str)       # 相当于train的‘name’
     parser.add_argument('--gt_root', type=str, required=True)
     parser.add_argument('--complete_root', type=str, required=True)
 
