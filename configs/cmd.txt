@@ -1656,8 +1656,20 @@ CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 
 # 训练QueryOTR bs2 [暂未开始] 约需要h
 
-# 消融实验 循环层位置 KEXI 250k [本地3090Ti] 约需要91h
+# 消融实验 循环层位置 KEXI 250k [已完成] 约需要91h     # best
 只使用8层blk，在第一层加入循环
+CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_early.json
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_early/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 43.48/0.9991/0.004
+All average forward run time: (0.041727) per frame[本地3090Ti]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.87/0.9962/0.016
+All average forward run time: (0.041648) per frame[本地3090Ti]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.12/0.9793/0.048
+All average forward run time: (0.042050) per frame[本地3090Ti]
+[250k, Avg Inner]36.49 0.9915
+只用了8层的early就比late要好，所以直接干掉了late的方案
+
 
 # 消融实验 循环层位置 KEXI 250k [矩池云3090-tmux0] 约需要h
 只使用8层blk，在中间层加入循环
@@ -1719,7 +1731,7 @@ KEXI[本地3060] 训练中 约需要41h
 
 [170k, Outer Fov20, input512]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.10/0.8369/0.687[本地3070Ti] 不错哦
 [350k, Outer Fov20, input512]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.59/0.8412/0.556[本地3070Ti] Places 泛化很强。
-[390k, Outer Fov20, input512][本地3070Ti] fine-tune
+[390k, Outer Fov20, input512]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.62/0.8490/0.594[本地3070Ti] fine-tune
 
 
 
@@ -1768,8 +1780,9 @@ CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 [best, Outer Fov10]Average Warping Error = 0.005831[矩池云P100]
 [best, Outer Fov20]Average Warping Error = 0.006419[矩池云P100]
 
-
-
+# 重新在KITTI360-EXI上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k，预计需要130h=5.4天
+9层blk early fusion
+python train.py -c configs/KITTI360EX-I_FlowLens_early.json
 
 
 
