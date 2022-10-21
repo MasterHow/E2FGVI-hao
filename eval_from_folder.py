@@ -76,8 +76,8 @@ def main_worker(args):
 
             ### load input images
             # 我们是png格式的哦
-            filename = os.path.join(frame_dir, "%05d.png" % t)    # misf
-            # filename = os.path.join(frame_dir, "%08d.png" % t)     # lama
+            # filename = os.path.join(frame_dir, "%05d.png" % t)    # misf
+            filename = os.path.join(frame_dir, "%08d.png" % t)     # lama, put
             comp_frame = cv2.imread(filename)
             comp_frame = cv2.resize(comp_frame, (w, h))
             comp_frames.append(comp_frame)

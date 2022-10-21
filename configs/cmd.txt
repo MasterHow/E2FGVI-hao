@@ -1458,7 +1458,7 @@ All average forward run time: (0.051255) per frame[矩池云3090]
 All average forward run time: (0.051354) per frame[矩池云3090]
 [250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.94/0.9784/0.058
 All average forward run time: (0.050940) per frame
-[矩池云3090]
+[矩池云3090] avg 0.030
 没毛病，继续吧家人们
 奇怪的是我前250k训练都没有问题，什么都没改从250k加载到500k训练突然开不起来了？
 我就以bs2训练250k呢？
@@ -1667,17 +1667,38 @@ All average forward run time: (0.041727) per frame[本地3090Ti]
 All average forward run time: (0.041648) per frame[本地3090Ti]
 [250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.12/0.9793/0.048
 All average forward run time: (0.042050) per frame[本地3090Ti]
-[250k, Avg Inner]36.49 0.9915
+[250k, Avg Inner]36.49 0.9915 0.023
 只用了8层的early就比late要好，所以直接干掉了late的方案
+因此直接用9层双卡重新跑KITTI360-EX
+注意，消融表格里填的是8层的精度，未来记得替换成9层的哦。
 
 
-# 消融实验 循环层位置 KEXI 250k [矩池云3090-tmux0] 约需要h
+# 消融实验 循环层位置 KEXI 250k [已完成] 需要109h
 只使用8层blk，在中间层加入循环
 CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_middle.json
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_middle/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov5 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.88/0.9990/0.005
+All average forward run time: (0.048759) per frame[矩池云3090]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.63/0.9960/0.017
+All average forward run time: (0.048975) per frame[矩池云3090]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.87/0.9784/0.067
+All average forward run time: (0.048656) per frame[矩池云3090]
+[250k, Avg Inner]36.13 0.9911 0.030
 
-# 消融实验 循环层位置 KEXI 250k [本地3090] 约需要h
+
+# 消融实验 循环层位置 KEXI 250k [已完成] 约需要98.3h
 只使用6层blk，使用8层会爆炸，所有层都有循环
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_all.json
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_all/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 ----model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.90/0.9990/0.008
+All average forward run time: (0.046083) per frame[本地3090]
+[250k, Inner Fov10Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.80/0.9962/0.022
+All average forward run time: (0.046050) per frame][本地3090]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.26/0.9800/0.068
+All average forward run time: (0.046720) per frame[本地3090]
+[250k, Avg Inner]36.32 0.9914 (9917) 0.033
 
 
 
@@ -1733,6 +1754,13 @@ KEXI[本地3060] 训练中 约需要41h
 [350k, Outer Fov20, input512]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.59/0.8412/0.556[本地3070Ti] Places 泛化很强。
 [390k, Outer Fov20, input512]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.62/0.8490/0.594[本地3070Ti] fine-tune
 
+# 测试E-warp [tmux0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/misf-ewarp-512-test/fine-tune/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/misf-ewarp-512-test/fine-tune/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[170k, Outer Fov20, input512]Average Warping Error = 0.002674[矩池云P100]。。。
+[350k, Outer Fov20, input512]Average Warping Error = 0.003533[矩池云P100]...
+[390k, Outer Fov20, input512]Average Warping Error = 0.003236[矩池云P100]
+找个别的算法对比吧
 
 
 
@@ -1780,9 +1808,43 @@ CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 [best, Outer Fov10]Average Warping Error = 0.005831[矩池云P100]
 [best, Outer Fov20]Average Warping Error = 0.006419[矩池云P100]
 
+
+
 # 重新在KITTI360-EXI上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k，预计需要130h=5.4天
 9层blk early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_early.json
 
+# 基于early进行消融实验 使用Vanilla Attention替换3D Decoupled[本地3090TI] 预计需要92h
+9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
+early fusion
+python train.py -c configs/KITTI360EX-I_FlowLens_ablation_vanilla.json
 
+# 基于early进行消融实验 使用CSWin替换3D Decoupled 即Local Attention[本地3090] 预计需要107h
+9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
+early fusion
+python train.py -c configs/KITTI360EX-I_FlowLens_ablation_local.json
+
+# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[矩池云单卡3090-tmux0] 预计需要h
+9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
+early fusion
+python train.py -c configs/KITTI360EX-I_FlowLens_ablation_focal.json
+
+
+
+# PUT
+python inference.py --name pretrained --func inference_complet_sample_in_feature_for_evaluation --gpu 0 --batch_size 1 --gpu 0 --data_type val --mask_dir D:\MyProject\PyThon\FlowInpainting\lama\KITTI360-EX\InnerSphere\masks\fov20
+[best, Inner Fov5]-[本地3070Ti]
+[best, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.80/0.9710/0.091[本地3070Ti]
+[best, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 24.65/0.9519/0.142[本地3070Ti]
+测一下Ewarp，如果不是很好就替换掉MISF了
+# 测试E-warp [cuda0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/PUT/In/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/PUT/In/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[best, Outer Fov20]Average Warping Error = 0.005770[矩池云P100]
+非常nice，我们就用PUT替换掉MISF了
+
+python inference.py --name pretrained --func inference_complet_sample_in_feature_for_evaluation --gpu 0 --batch_size 1 --gpu 0 --data_type val --mask_dir D:\MyProject\PyThon\FlowInpainting\lama\KITTI360-EX\OuterPinhole\masks\fov20
+[best, Outer Fov5]-[本地3070Ti]
+[best, Outer Fov10]-[本地3070Ti]
+[best, Outer Fov20]-[本地3070Ti]
 
