@@ -1817,6 +1817,7 @@ python train.py -c configs/KITTI360EX-I_FlowLens_early.json
 # 基于early进行消融实验 使用Vanilla Attention替换3D Decoupled[本地3090TI] 预计需要92h
 9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
 early fusion
+中途远程看了一下然后就变成3s迭代一次巨慢，所以从80k开始bs改成1了，为了顺利训练完。
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_vanilla.json
 
 # 基于early进行消融实验 使用CSWin替换3D Decoupled 即Local Attention[本地3090] 预计需要107h
@@ -1824,8 +1825,8 @@ python train.py -c configs/KITTI360EX-I_FlowLens_ablation_vanilla.json
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_local.json
 
-# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[矩池云单卡3090-tmux0] 预计需要h
-9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
+# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[矩池云单卡3090-tmux0] 预计需要110h
+9层blk会巨慢 所以使用8层blk 把我们的注意力替换为focal注意力 保留了时间维度上的注意力 即temp focal
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_focal.json
 
@@ -1833,18 +1834,54 @@ python train.py -c configs/KITTI360EX-I_FlowLens_ablation_focal.json
 
 # PUT
 python inference.py --name pretrained --func inference_complet_sample_in_feature_for_evaluation --gpu 0 --batch_size 1 --gpu 0 --data_type val --mask_dir D:\MyProject\PyThon\FlowInpainting\lama\KITTI360-EX\InnerSphere\masks\fov20
-[best, Inner Fov5]-[本地3070Ti]
+[best, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 27.34/0.9743/0.071[本地3070Ti]
 [best, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.80/0.9710/0.091[本地3070Ti]
 [best, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 24.65/0.9519/0.142[本地3070Ti]
 测一下Ewarp，如果不是很好就替换掉MISF了
 # 测试E-warp [cuda0]
-CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/PUT/In/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
-CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/PUT/In/fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
-[best, Outer Fov20]Average Warping Error = 0.005770[矩池云P100]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXI-fov5/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXI-fov5/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXI-fov10/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXI-fov10/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+
+[best, Inner Fov5]Average Warping Error = 0.005035[矩池云P100]
+[best, Inner Fov10]Average Warping Error = 0.005174[矩池云P100]
+[best, Inner Fov20]Average Warping Error = 0.005770[矩池云P100]
 非常nice，我们就用PUT替换掉MISF了
 
 python inference.py --name pretrained --func inference_complet_sample_in_feature_for_evaluation --gpu 0 --batch_size 1 --gpu 0 --data_type val --mask_dir D:\MyProject\PyThon\FlowInpainting\lama\KITTI360-EX\OuterPinhole\masks\fov20
-[best, Outer Fov5]-[本地3070Ti]
-[best, Outer Fov10]-[本地3070Ti]
-[best, Outer Fov20]-[本地3070Ti]
+[best, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.71/0.9704/0.232[本地3070Ti]
+[best, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 18.29/0.9181/0.329[本地3070Ti]
+[best, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 16.10/0.8176/0.403[本地3070Ti]
+因为太慢所以Outer只在第一个序列上测试
 
+# 测试E-warp [cuda0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXO-fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/KEXO-fov20/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+[best, Outer Fov5]Average Warping Error = 0.005490[矩池云P100]
+[best, Outer Fov10]Average Warping Error = 0.006549[矩池云P100]
+[best, Outer Fov20]Average Warping Error = 0.011308[矩池云P100]
+
+
+
+# SRN
+python my_test.py --dataset KITTI360-EXO-fov20 --data_file /mnt/dataset/KITTI360-EX-256-512/OuterPinhole/imgs-256-512/ --mask_file /mnt/dataset/KITTI360-EX-256-512/OuterPinhole/masks-256-512/fov20/ --load_model_dir ./checkpoints/CityScapes --random_mask 0 --img_shapes 256,512,3 --mask_shapes 186,336 --model srn
+
+[CityScapes, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.72/0.9283/0.418[矩池云P100] 230 426 --total time > 131.48355150222778s, average time > 0.03460093460584942s
+[CityScapes, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 15.85/0.8510/0.490[矩池云P100] 210 380 --total time > 128.424480676651s, average time > 0.03379591596753974s
+[CityScapes, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 14.74/0.7523/0.528[矩池云P100] 186 336 --total time > 126.85590720176697s, average time > 0.0333831334741492s
+
+# 测试E-warp [cuda0]
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/SRN/KITTI360-EXO-fov5_srn/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/SRN/KITTI360-EXO-fov5_srn/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+
+CUDA_VISIBLE_DEVICES=1 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/SRN/KITTI360-EXO-fov10_srn/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/SRN/KITTI360-EXO-fov10_srn/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+
+CUDA_VISIBLE_DEVICES=2 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/SRN/KITTI360-EXO-fov20_srn/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp++/
+CUDA_VISIBLE_DEVICES=2 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/SRN/KITTI360-EXO-fov20_srn/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp++/
+
+[best, Outer Fov5]Average Warping Error = 0.005391[矩池云P100] 3391。
+[best, Outer Fov10]Average Warping Error = 0.005996[矩池云P100]
+[best, Outer Fov20]Average Warping Error = 0.006808[矩池云P100]
