@@ -1576,6 +1576,7 @@ All average forward run time: (0.034281) per frame[本地3090]
 python train.py -c configs/KITTI360EX-I_flowlens_small.json
 
 
+
 # 训练FuseFormer KITTI-EX-O bs2 500k [已完成] 约需要78.5h
 # 432 240
 序列测试+只使用之前的参考帧:
@@ -1611,6 +1612,9 @@ python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/fuse
 [500k, Inner Fov10]Average Warping Error = 0.003771[矩池云P100]
 [500k, Inner Fov20]Average Warping Error = 0.004102[矩池云P100]
 
+
+
+
 # 训练STTN KITTI-EX-O bs2 500k [已完成310k] 约需要h
 --model sttn --ckpt release_model/sttn_kitti360ex-o\gen_00025.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//OuterPinhole --fov fov10 --past_ref --timing --memory --save_results --model_output_size 108 60
 [250k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 21.31/0.9684/0.275
@@ -1628,7 +1632,6 @@ CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 [310k, Outer Fov5]Average Warping Error = 0.005248[矩池云P100]
 [310k, Outer Fov10]Average Warping Error = 0.006208[矩池云P100]
 [310k, Outer Fov20]Average Warping Error = 0.008154[矩池云P100]
-
 
 # 训练STTN KITTI-EX-I bs2 500k [已完成450k] 约需要87h
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model sttn --ckpt release_model/sttn_kitti360ex-i\gen_00045.pth --dataset KITTI360-EX --data_root H://KITTI-360EX//InnerSphere --fov fov5 --past_ref --timing --memory --save_results --output_size 336 336 --model_output_size 84 84
@@ -1655,6 +1658,9 @@ CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 [450k, Inner Fov20]Average Warping Error = 0.003864[矩池云P100]
 
 # 训练QueryOTR bs2 [暂未开始] 约需要h
+
+
+
 
 # 消融实验 循环层位置 KEXI 250k [已完成] 约需要91h     # best
 只使用8层blk，在第一层加入循环
@@ -1810,22 +1816,31 @@ CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 
 
 
-# 重新在KITTI360-EXI上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k，预计需要130h=5.4天
+# 重新在KITTI360-EXI上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k，预计需要130h=5.4天 预计还需要49.6h
 9层blk early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_early.json
 
-# 基于early进行消融实验 使用Vanilla Attention替换3D Decoupled[本地3090TI] 预计需要92h
+# 基于early进行消融实验 使用Vanilla Attention替换3D Decoupled[已完成]
 9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
 early fusion
 中途远程看了一下然后就变成3s迭代一次巨慢，所以从80k开始bs改成1了，为了顺利训练完。
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_vanilla.json
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_vanilla/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 ----model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 43.12/0.9990/0.005
+All average forward run time: (0.041273) per frame[本地3090Ti]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.38/0.9959/0.021
+All average forward run time: (0.041325) per frame[本地3090Ti]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.45/0.9767/0.101
+All average forward run time: (0.041931) per frame[本地3090Ti]
+[250k, Avg Inner]35.98 0.9905 0.0423
 
-# 基于early进行消融实验 使用CSWin替换3D Decoupled 即Local Attention[本地3090] 预计需要107h
-9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
+# 基于early进行消融实验 使用CSWin替换3D Decoupled 即Local Attention[本地3090] 预计还需要26h
+9层blk会巨慢 所以使用8层blk 把我们的注意力替换为CSWin 保留了时间维度上的注意力
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_local.json
 
-# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[矩池云单卡3090-tmux0] 预计需要110h
+# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[矩池云单卡3090-tmux0] 预计还需要57h
 9层blk会巨慢 所以使用8层blk 把我们的注意力替换为focal注意力 保留了时间维度上的注意力 即temp focal
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_focal.json
@@ -1885,3 +1900,11 @@ CUDA_VISIBLE_DEVICES=2 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 [best, Outer Fov5]Average Warping Error = 0.005391[矩池云P100] 3391。
 [best, Outer Fov10]Average Warping Error = 0.005996[矩池云P100]
 [best, Outer Fov20]Average Warping Error = 0.006808[矩池云P100]
+
+
+
+# 基于early进行消融实验 使用F3N替换MixF3N [本地3090Ti] 预计需要87.5h
+9层blk会巨慢 所以使用8层blk 反正现在表格里的early也是用8层
+early fusion
+python train.py -c configs/KITTI360EX-I_FlowLens_ablation_F3N.json
+
