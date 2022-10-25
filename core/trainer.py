@@ -233,6 +233,18 @@ class Trainer:
             else:
                 self.mix_f3n = False
 
+            # 是否使用FFN代替F3N，仅用于消融实验
+            if config['model']['ffn'] != 0:
+                self.ffn = True
+            else:
+                self.ffn = False
+
+            # 是否使用MixFFN代替F3N，仅用于消融实验，来自于SegFormer
+            if config['model']['mix_ffn'] != 0:
+                self.mix_ffn = True
+            else:
+                self.mix_ffn = False
+
             # 定义transformer的深度
             if config['model']['depths'] != 0:
                 self.depths = config['model']['depths']
@@ -332,7 +344,8 @@ class Trainer:
                     cross_att=self.cross_att, time_att=self.time_att, time_deco=self.time_deco,
                     temp_focal=self.temp_focal, cs_win=self.cs_win, mem_att=self.mem_att, cs_focal=self.cs_focal,
                     cs_focal_v2=self.cs_focal_v2,
-                    cs_trans=self.cs_trans, mix_f3n=self.mix_f3n, conv_path=self.conv_path, cs_sw=self.cs_sw,
+                    cs_trans=self.cs_trans, mix_f3n=self.mix_f3n, ffn=self.ffn, mix_ffn=self.mix_ffn,
+                    conv_path=self.conv_path, cs_sw=self.cs_sw,
                     pool_strip=self.pool_strip, pool_sw=self.pool_sw, depths=self.depths, sw_list=self.sw_list,
                     head_list=self.head_list, blk_list=self.blk_list, hide_dim=self.hide_dim,
                     window_size=self.window_size, output_size=self.output_size, small_model=self.small_model)
@@ -349,7 +362,8 @@ class Trainer:
                     cross_att=self.cross_att, time_att=self.time_att, time_deco=self.time_deco,
                     temp_focal=self.temp_focal, cs_win=self.cs_win, mem_att=self.mem_att, cs_focal=self.cs_focal,
                     cs_focal_v2=self.cs_focal_v2,
-                    cs_trans=self.cs_trans, mix_f3n=self.mix_f3n, depths=self.depths, head_list=self.head_list,
+                    cs_trans=self.cs_trans, mix_f3n=self.mix_f3n, ffn=self.ffn,  mix_ffn=self.mix_ffn,
+                    depths=self.depths, head_list=self.head_list,
                     blk_list=self.blk_list, hide_dim=self.hide_dim,
                     window_size=self.window_size, output_size=self.output_size, small_model=self.small_model)
         else:

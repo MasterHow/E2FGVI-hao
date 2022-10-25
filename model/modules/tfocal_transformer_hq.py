@@ -258,6 +258,61 @@ class SoftComp(nn.Module):
         return feat
 
 
+class FeedForward(nn.Module):
+    """FeedForward from ViT, only for ablation."""
+    def __init__(self, dim, hidden_dim, dropout=0.):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, dim),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class DWConv(nn.Module):
+    """DWConv of MixFFN from SegFormer, only for ablation."""
+    def __init__(self, dim=768):
+        super(DWConv, self).__init__()
+        self.dwconv = nn.Conv2d(dim, dim, 3, 1, 1, bias=True, groups=dim)
+
+    def forward(self, x, H, W):
+        B, N, C = x.shape
+        x = x.transpose(1, 2).view(B, C, H, W)
+        x = self.dwconv(x)
+        x = x.flatten(2).transpose(1, 2)
+
+        return x
+
+
+class MixFFN(nn.Module):
+    """MixFFN from SegFormer, only for ablation."""
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
+        super().__init__()
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        self.fc1 = nn.Linear(in_features, hidden_features)
+        self.dwconv = DWConv(hidden_features)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_features, out_features)
+        self.drop = nn.Dropout(drop)
+
+        self.apply(self._init_weights)
+
+    def forward(self, x, H, W):
+        x = self.fc1(x)
+        x = self.dwconv(x, H, W)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
+
 class FusionFeedForward(nn.Module):
     def __init__(self, d_model, n_vecs=None, t2t_params=None):
         super(FusionFeedForward, self).__init__()
@@ -2798,6 +2853,8 @@ class TemporalFocalTransformerBlock(nn.Module):
                             Only work with cs_focal=True.
         cs_win_strip (int): cs win attention strip width. Default: 1.
         mix_f3n (bool): If True, enhance f3n with mix_f3n.
+        ffn (bool): If True, use ffn to replace f3n. only for ablation.
+        mix_ffn (bool): If True, use mix_ffn form segformer to replace f3n. only for ablation.
     """
     def __init__(self,
                  dim,
@@ -2829,7 +2886,9 @@ class TemporalFocalTransformerBlock(nn.Module):
                  cs_focal=False,
                  cs_focal_v2=False,
                  cs_win_strip=1,
-                 mix_f3n=False):
+                 mix_f3n=False,
+                 ffn=False,
+                 mix_ffn=False):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
@@ -2898,10 +2957,20 @@ class TemporalFocalTransformerBlock(nn.Module):
 
         self.norm2 = norm_layer(dim)
         self.mix_f3n = mix_f3n
-        if not mix_f3n:
-            self.mlp = FusionFeedForward(dim, n_vecs=n_vecs, t2t_params=t2t_params)
-        else:
+        self.ffn = ffn
+        self.mix_ffn = mix_ffn
+        if mix_f3n:
+            # mixf3n, hidden dim的维度与F3N默认的维度保持一致(1960)
             self.mlp = MixFusionFeedForward(dim, n_vecs=n_vecs, t2t_params=t2t_params)
+        elif ffn:
+            # ffn, hidden dim的维度与F3N默认的维度保持一致
+            self.mlp = FeedForward(dim, hidden_dim=1960)
+        elif mix_ffn:
+            # mixffn from SegFormer, hidden dim的维度与F3N默认的维度保持一致
+            self.mlp = MixFFN(dim, hidden_features=1960)
+        else:
+            # f3n
+            self.mlp = FusionFeedForward(dim, n_vecs=n_vecs, t2t_params=t2t_params)
 
     def forward(self, x):
 
@@ -2985,14 +3054,24 @@ class TemporalFocalTransformerBlock(nn.Module):
         y = self.norm2(x)
         if not self.token_fusion:
             # default manner
-            if not self.mix_f3n:
-                x = x + self.mlp(y.view(B, T * H * W, C), output_size).view(
-                    B, T, H, W, C)
-            else:
+            if self.mix_f3n:
                 # MixF3N需要额外传递H, W
                 x = x + self.mlp(y.view(B, T * H * W, C), output_size, T, H, W).view(
                     B, T, H, W, C)
+            elif self.ffn:
+                # FFN
+                x = x + self.mlp(y.view(B, T * H * W, C)).view(
+                    B, T, H, W, C)
+            elif self.mix_ffn:
+                # MixFFN from segformer, 需要额外传递 H W
+                x = x + self.mlp(y.view(B, T * H * W, C), H, W).view(
+                    B, T, H, W, C)
+            else:
+                # F3N
+                x = x + self.mlp(y.view(B, T * H * W, C), output_size).view(
+                    B, T, H, W, C)
         else:
+            # token fusion
             x = x + self.mlp(y.view(B, T * H * W, C), (H * 3, W * 3)).view(
                 B, T, H, W, C)
 
@@ -3923,6 +4002,8 @@ class Decoupled3DFocalTransformerBlock(nn.Module):
                             Only work when cs_win_strip=1.
         pool_sw (int): The strip width that using to pooling and enhance strip window.
                         Only work with pool_strip=True.
+        ffn (bool): If True, use ffn to replace f3n. only for ablation. [NOT WORK NOW]
+        mix_ffn (bool): If True, use mix_ffn form segformer to replace f3n. only for ablation. [NOT WORK NOW]
     """
     def __init__(self,
                  dim,
@@ -3957,7 +4038,9 @@ class Decoupled3DFocalTransformerBlock(nn.Module):
                  conv_path=False,
                  cs_sw=False,
                  pool_strip=False,
-                 pool_sw=2):
+                 pool_sw=2,
+                 ffn=False,
+                 mix_ffn=False):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads

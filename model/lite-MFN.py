@@ -141,7 +141,9 @@ class InpaintGenerator(BaseNetwork):
                  sub_token_align=False, sub_factor=1, half_memory=False, last_memory=False, early_memory=True,
                  middle_memory=False,
                  cross_att=True, time_att=True, time_deco=True, temp_focal=False, cs_win=True, mem_att=False,
-                 cs_focal=True, cs_focal_v2=True, cs_trans=False, mix_f3n=True, conv_path=False,
+                 cs_focal=True, cs_focal_v2=True, cs_trans=False,
+                 mix_f3n=True, ffn=False, mix_ffn=False,
+                 conv_path=False,
                  cs_sw=False, pool_strip=False, pool_sw=1,
                  depths=9, sw_list=[], head_list=[], blk_list=[], hide_dim=None,
                  window_size=None, output_size=None, small_model=False):
@@ -245,9 +247,11 @@ class InpaintGenerator(BaseNetwork):
         mem_att = mem_att                           # 如果为True，则使用cross att直接聚合不同迭代的记忆和当前特征
         cs_focal = cs_focal                         # 如果为True，则为cs win增强池化的focal机制
         cs_focal_v2 = cs_focal_v2                   # 如果为True，则cs win的focal基于与池化完的张量方向相同的滑窗实现
-        # cs_win_strip = cs_win_strip                 # 决定了 cs win 的条带宽度，默认为1，目前已被sw_list替换；tf主干默认用条带宽度1的
+        # cs_win_strip = cs_win_strip               # 决定了 cs win 的条带宽度，默认为1，目前已被sw_list替换；tf主干默认用条带宽度1的
         cs_trans = cs_trans                         # 如果为True，则使用我们增强的cswin替代temporal focal作为trans主干
-        mix_f3n = mix_f3n                           # 如果为True，则使用MixF3N代替原本的F3N，目前仅对于cswin主干生效
+        mix_f3n = mix_f3n                           # 如果为True，则使用MixF3N代替原本的F3N
+        ffn = ffn                                   # 如果为True，则使用FFN代替原本的F3N，目前仅对于tf主干生效
+        mix_ffn = mix_ffn                           # 如果为True，则使用MixFFN(SegFormer)代替原本的F3N，目前仅对于tf主干生效
         conv_path = conv_path                       # 如果为True，则给attention额外引入CONV path，目前仅对于cswin主干生效
         cs_sw = cs_sw                               # 如果为True，使用滑窗逻辑强化cswin，只对于条带宽度大于1和cswin主干生效
         pool_strip = pool_strip                     # 如果为True，则将不同宽度的条带池化到1来增强当前窗口，只对初始条带为1有效
@@ -425,7 +429,9 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_focal=cs_focal,
                                                               cs_focal_v2=cs_focal_v2,
                                                               cs_win_strip=1,
-                                                              mix_f3n=mix_f3n), )
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -454,6 +460,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -471,7 +479,9 @@ class InpaintGenerator(BaseNetwork):
                                                               t2t_params=t2t_params,
                                                               pool_method=pool_method,
                                                               memory=False,
-                                                              mix_f3n=mix_f3n))
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn))
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -500,6 +510,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -535,7 +547,9 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_focal=cs_focal,
                                                               cs_focal_v2=cs_focal_v2,
                                                               cs_win_strip=1,
-                                                              mix_f3n=mix_f3n), )
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -564,6 +578,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -581,7 +597,9 @@ class InpaintGenerator(BaseNetwork):
                                                               t2t_params=t2t_params,
                                                               pool_method=pool_method,
                                                               memory=False,
-                                                              mix_f3n=mix_f3n))
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn))
                         else:
                             # 使用cs win主干
                             # 虽然没有记忆，但是self attention也需要用到cswin的一系列参数！
@@ -611,6 +629,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -646,7 +666,9 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_focal=cs_focal,
                                                               cs_focal_v2=cs_focal_v2,
                                                               cs_win_strip=1,
-                                                              mix_f3n=mix_f3n), )
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -675,6 +697,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -692,7 +716,9 @@ class InpaintGenerator(BaseNetwork):
                                                               t2t_params=t2t_params,
                                                               pool_method=pool_method,
                                                               memory=False,
-                                                              mix_f3n=mix_f3n))
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn))
                         else:
                             # 使用cs win主干
                             # 虽然没有记忆，但是self attention也需要用到cswin的一系列参数！
@@ -722,6 +748,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -757,7 +785,9 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_focal=cs_focal,
                                                               cs_focal_v2=cs_focal_v2,
                                                               cs_win_strip=1,
-                                                              mix_f3n=mix_f3n), )
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -786,6 +816,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -803,7 +835,9 @@ class InpaintGenerator(BaseNetwork):
                                                               t2t_params=t2t_params,
                                                               pool_method=pool_method,
                                                               memory=False,
-                                                              mix_f3n=mix_f3n))
+                                                              mix_f3n=mix_f3n,
+                                                              ffn=ffn,
+                                                              mix_ffn=mix_ffn))
                         else:
                             # 使用cs win主干
                             # 虽然没有记忆，但是self attention也需要用到cswin的一系列参数！
@@ -833,6 +867,8 @@ class InpaintGenerator(BaseNetwork):
                                                                  cs_focal_v2=cs_focal_v2,
                                                                  cs_win_strip=sw_list[i],
                                                                  mix_f3n=mix_f3n,
+                                                                 ffn=ffn,
+                                                                 mix_ffn=mix_ffn,
                                                                  conv_path=conv_path,
                                                                  cs_sw=cs_sw,
                                                                  pool_strip=pool_strip,
@@ -867,7 +903,9 @@ class InpaintGenerator(BaseNetwork):
                                                           cs_focal=cs_focal,
                                                           cs_focal_v2=cs_focal_v2,
                                                           cs_win_strip=1,
-                                                          mix_f3n=mix_f3n), )
+                                                          mix_f3n=mix_f3n,
+                                                          ffn=ffn,
+                                                          mix_ffn=mix_ffn), )
                     else:
                         # 使用cs win主干
                         blocks.append(
@@ -896,6 +934,8 @@ class InpaintGenerator(BaseNetwork):
                                                              cs_focal_v2=cs_focal_v2,
                                                              cs_win_strip=sw_list[i],
                                                              mix_f3n=mix_f3n,
+                                                             ffn=ffn,
+                                                             mix_ffn=mix_ffn,
                                                              conv_path=conv_path,
                                                              cs_sw=cs_sw,
                                                              pool_strip=pool_strip,
@@ -916,7 +956,9 @@ class InpaintGenerator(BaseNetwork):
                                                   t2t_params=t2t_params,
                                                   pool_method=pool_method,
                                                   token_fusion=True,
-                                                  mix_f3n=mix_f3n))
+                                                  mix_f3n=mix_f3n,
+                                                  ffn=ffn,
+                                                  mix_ffn=mix_ffn))
             self.transformer = nn.Sequential(*blocks)
 
         if init_weights:
