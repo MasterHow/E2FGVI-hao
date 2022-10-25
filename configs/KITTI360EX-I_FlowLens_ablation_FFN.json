@@ -4,7 +4,7 @@
     "train_data_loader": {
         "sequence_load": 1,
         "name": "KITTI360-EX",
-        "data_root": "datasets//KITTI-360EX//InnerSphere",
+        "data_root": "H://KITTI-360EX//InnerSphere",
         "w": 336,
         "h": 336,
         "num_local_frames": 5,
