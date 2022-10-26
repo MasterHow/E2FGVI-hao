@@ -1874,10 +1874,11 @@ All average forward run time: (0.043475) per frame[本地3090]
 [250k, Avg Inner]36.09 0.9913 0.030
 
 
-# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[矩池云单卡3090-tmux0] 预计还需要15h
+# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[已完成待测试]
 9层blk会巨慢 所以使用8层blk 把我们的注意力替换为focal注意力 保留了时间维度上的注意力 即temp focal
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_focal.json
+# 待测试。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。
 
 
 
@@ -1950,11 +1951,11 @@ python train.py -c configs/train_flowlens_youtube_v2.json
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_FFN.json
 
-# 基于early进行消融实验 使用MixFFN替换MixF3N [未开始] 预计需要h
+# 基于early进行消融实验 使用MixFFN替换MixF3N [矩池云单卡3090 tmux0] 预计需要h
 9层blk会巨慢 所以使用8层blk 反正现在表格里的early也是用8层
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_MixFFN.json
 
-# 重新在KITTI360-EXO上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k 约需要196h 8.2天
+# 重新在KITTI360-EXO上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k 约需要193.2h 8.0天
 9层blk early fusion bs4 lr0.50(0.25x2)
 python train.py -c configs/KITTI360EX-O_FlowLens_early.json

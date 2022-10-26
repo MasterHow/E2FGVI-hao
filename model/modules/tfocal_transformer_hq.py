@@ -301,7 +301,7 @@ class MixFFN(nn.Module):
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
 
-        self.apply(self._init_weights)
+        # self.apply(self._init_weights)
 
     def forward(self, x, H, W):
         x = self.fc1(x)
@@ -3063,8 +3063,8 @@ class TemporalFocalTransformerBlock(nn.Module):
                 x = x + self.mlp(y.view(B, T * H * W, C)).view(
                     B, T, H, W, C)
             elif self.mix_ffn:
-                # MixFFN from segformer, 需要额外传递 H W
-                x = x + self.mlp(y.view(B, T * H * W, C), H, W).view(
+                # MixFFN from segformer, 需要额外传递 H W 固定为 64 98 for ablation
+                x = x + self.mlp(y.view(B, T * H * W, C), 64, 98).view(
                     B, T, H, W, C)
             else:
                 # F3N
