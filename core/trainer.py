@@ -75,9 +75,20 @@ class Trainer:
         self.l1_loss = nn.L1Loss()
 
         if config['model']['net'] == 'lite-MFN' or config['model']['net'] == 'large-MFN':
-            self.flow_comp_loss = FlowCompletionLoss(estimator='mfn').to(self.config['device'])
-        else:
-            self.flow_comp_loss = FlowCompletionLoss(estimator='spy').to(self.config['device'])     # default
+
+            # 是否使用spynet作为光流补全网络，目前仅用于消融实验
+            if config['model']['spy_net'] != 0:
+                self.spy_net = True
+            else:
+                self.spy_net = False
+
+            # 用哪个网络计算loss
+            if self.spy_net:
+                # spy net
+                self.flow_comp_loss = FlowCompletionLoss(estimator='spy').to(self.config['device'])  # default
+            else:
+                # mask flow net s
+                self.flow_comp_loss = FlowCompletionLoss(estimator='mfn').to(self.config['device'])
 
         # setup models including generator and discriminator
         net = importlib.import_module('model.' + config['model']['net'])
@@ -334,7 +345,7 @@ class Trainer:
 
                 # 使用cs主干
                 self.netG = net.InpaintGenerator(
-                    skip_dcn=self.skip_dcn, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
+                    skip_dcn=self.skip_dcn, spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
@@ -352,7 +363,7 @@ class Trainer:
             else:
                 # 使用tf主干
                 self.netG = net.InpaintGenerator(
-                    skip_dcn=self.skip_dcn, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
+                    skip_dcn=self.skip_dcn, spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# from model.modules.flow_comp import SPyNet
+from model.modules.flow_comp import SPyNet
 from model.modules.flow_comp_MFN import MaskFlowNetS
 from model.modules.feat_prop import BidirectionalPropagation, SecondOrderDeformableAlignment
 from model.modules.tfocal_transformer_hq import TemporalFocalTransformerBlock, SoftSplit, SoftComp,\
@@ -135,7 +135,7 @@ class deconv(nn.Module):
 
 
 class InpaintGenerator(BaseNetwork):
-    def __init__(self, init_weights=True, flow_align=True, skip_dcn=False, flow_guide=False,
+    def __init__(self, init_weights=True, flow_align=True, skip_dcn=False, spy_net=False, flow_guide=False,
                  token_fusion=False, token_fusion_simple=False, fusion_skip_connect=False,
                  memory=True, max_mem_len=1, compression_factor=1, mem_pool=False, store_lf=False, align_cache=False,
                  sub_token_align=False, sub_factor=1, half_memory=False, last_memory=False, early_memory=True,
@@ -258,6 +258,7 @@ class InpaintGenerator(BaseNetwork):
         pool_sw = pool_sw                           # 用来池化增强当前条带的条带宽度
         window_size = window_size                   # 窗口的尺寸，相当于patch数量除以4
         output_size = output_size                   # 输出的尺寸，训练尺寸//4
+        spy_net = spy_net                           # 如果为True，使用spynet替换maskflownets计算光流
 
         # encoder
         # self.encoder = Encoder()    # default
@@ -969,7 +970,12 @@ class InpaintGenerator(BaseNetwork):
                     m.init_offset()
 
         # flow completion network
-        self.update_MFN = MaskFlowNetS()
+        if spy_net:
+            # 使用SpyNet
+            self.update_MFN = SPyNet()
+        else:
+            # 使用MaskFlowNetS
+            self.update_MFN = MaskFlowNetS()
 
     def forward_bidirect_flow(self, masked_local_frames):
         b, l_t, c, h, w = masked_local_frames.size()
