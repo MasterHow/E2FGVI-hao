@@ -45,6 +45,8 @@
         "cs_focal": 2,
         "cs_trans": 0,
         "mix_f3n": 1,
+        "ffn": 0,
+        "mix_ffn": 0,
         "conv_path": 0,
         "cs_sw": 0,
         "pool_strip": 0,

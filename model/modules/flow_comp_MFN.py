@@ -17,7 +17,7 @@ class MaskFlowNetS(nn.Module):
         use_pretrain=True,
         # pretrained='https://download.openmmlab.com/mmflow/maskflownet/maskflownets_8x1_slong_flyingchairs_384x448.pth',
         pretrained='./release_model/maskflownets_8x1_sfine_flyingthings3d_subset_384x768.pth',
-        config_file='../mmflow/configs/maskflownets_8x1_sfine_flyingthings3d_subset_384x768.py',
+        config_file='../mmflow/configs/maskflownet/maskflownets_8x1_sfine_flyingthings3d_subset_384x768.py',
         device='cuda:0',
         module_level=6
     ):

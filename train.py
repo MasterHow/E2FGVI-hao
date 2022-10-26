@@ -28,7 +28,7 @@ def main_worker(rank, config):
         config['local_rank'] = config['global_rank'] = rank
     if config['distributed']:
         torch.cuda.set_device(int(config['local_rank']))
-        torch.distributed.init_process_group(backend='nccl',
+        torch.distributed.init_process_group(backend='nccl',    # nccl for Linux DDP, gloo for windows
                                              init_method=config['init_method'],
                                              world_size=config['world_size'],
                                              rank=config['global_rank'],
