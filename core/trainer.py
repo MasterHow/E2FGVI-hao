@@ -82,12 +82,22 @@ class Trainer:
             else:
                 self.spy_net = False
 
+            # 是否使用maskflownet-s作为教师 光流补全网络，目前仅用于消融实验，仅对于SpyNet网络生效，因为不会用烂的监督好的
+            if config['model']['mfn_teach'] != 0:
+                self.mfn_teach = True
+            else:
+                self.mfn_teach = False
+
             # 用哪个网络计算loss
             if self.spy_net:
-                # spy net
-                self.flow_comp_loss = FlowCompletionLoss(estimator='spy').to(self.config['device'])  # default
+                if not self.mfn_teach:
+                    # spy net
+                    self.flow_comp_loss = FlowCompletionLoss(estimator='spy').to(self.config['device'])  # default
+                else:
+                    # mask flow net s 监督 spynet
+                    self.flow_comp_loss = FlowCompletionLoss(estimator='mfn').to(self.config['device'])
             else:
-                # mask flow net s
+                # mask flow net s 监督 mask flow net s
                 self.flow_comp_loss = FlowCompletionLoss(estimator='mfn').to(self.config['device'])
 
         # setup models including generator and discriminator

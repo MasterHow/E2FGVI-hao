@@ -22,7 +22,7 @@
         "no_dis": 0,
         "skip_dcn": 0,
         "spy_net": 1,
-        "mfn_teach": 0,
+        "mfn_teach": 1,
         "flow_guide": 0,
         "token_fusion": 0,
         "token_fusion_simple": 0,
