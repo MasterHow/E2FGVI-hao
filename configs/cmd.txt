@@ -1843,6 +1843,11 @@ All average forward run time: (0.050837) per frame[矩池云3090]
 [390k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.75/0.9781/0.064[矩池云3090]
 [390k, Avg Inner] 36.61 0.9912 0.029
 # 等待搜索最佳模型。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。
+搜索最佳模型[400k-500k]
+没有找到全面更好的，扩大搜索范围
+
+搜索最佳模型[250k-395k] 临时3090双卡 tmux0 400k-450k tmux1 455k-500k 进行中
+
 
 # 基于early进行消融实验 使用Vanilla Attention替换3D Decoupled[已完成]
 9层blk会巨慢 所以使用8层blk 把我们的注意力替换为经典注意力 保留了时间维度上的注意力
@@ -1874,11 +1879,17 @@ All average forward run time: (0.043475) per frame[本地3090]
 [250k, Avg Inner]36.09 0.9913 0.030
 
 
-# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[已完成待测试]
+# 基于early进行消融实验 使用Focal替换3D Decoupled 即Focal Attention[已完成]
 9层blk会巨慢 所以使用8层blk 把我们的注意力替换为focal注意力 保留了时间维度上的注意力 即temp focal
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_focal.json
-# 待测试。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_focal/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov5 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.77/0.9990/0.008[矩池云3090]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.49/0.9958/0.022
+All average forward run time: (0.048598) per frame[矩池云3090]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.18/0.9798/0.071[矩池云3090]
+[250k, Avg Inner]36.15 0.9915 0.034
 
 
 
@@ -1951,11 +1962,18 @@ python train.py -c configs/train_flowlens_youtube_v2.json
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_FFN.json
 
-# 基于early进行消融实验 使用MixFFN替换MixF3N [矩池云单卡3090 tmux0] 预计需要h
+# 基于early进行消融实验 使用MixFFN替换MixF3N [矩池云单卡3090 tmux0] 预计需要105h
 9层blk会巨慢 所以使用8层blk 反正现在表格里的early也是用8层
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_MixFFN.json
 
-# 重新在KITTI360-EXO上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k 约需要193.2h 8.0天
+# 重新在KITTI360-EXO上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k 约需要193.2h 8.0天 还需要183h
 9层blk early fusion bs4 lr0.50(0.25x2)
 python train.py -c configs/KITTI360EX-O_FlowLens_early.json
+
+# spynet消融实验[304 server-cuda1]
+CUDA_VISIBLE_DEVICES=0,1 python train.py -c configs/KITTI360EX-O_FlowLens_ablation_SpyNet.json
+
+# spynet消融实验[304 server-cuda2]
+CUDA_VISIBLE_DEVICES=2,3 python train.py -c configs/KITTI360EX-O_FlowLens_ablation_SpyNet-MFN-teacher.json
+
