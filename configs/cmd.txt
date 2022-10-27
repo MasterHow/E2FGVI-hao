@@ -1842,11 +1842,10 @@ All average forward run time: (0.050853) per frame[矩池云3090]
 All average forward run time: (0.050837) per frame[矩池云3090]
 [390k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.75/0.9781/0.064[矩池云3090]
 [390k, Avg Inner] 36.61 0.9912 0.029
-# 等待搜索最佳模型。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。
 搜索最佳模型[400k-500k]
 没有找到全面更好的，扩大搜索范围
-
-搜索最佳模型[250k-395k] 临时3090双卡 tmux0 400k-450k tmux1 455k-500k 进行中
+搜索最佳模型[250k-395k]
+没有找到全面更好的，但是如果切换到这个模型，我选择325k
 
 
 # 基于early进行消融实验 使用Vanilla Attention替换3D Decoupled[已完成]
@@ -1971,9 +1970,15 @@ python train.py -c configs/KITTI360EX-I_FlowLens_ablation_MixFFN.json
 9层blk early fusion bs4 lr0.50(0.25x2)
 python train.py -c configs/KITTI360EX-O_FlowLens_early.json
 
-# spynet消融实验[304 server-cuda1]
-CUDA_VISIBLE_DEVICES=0,1 python train.py -c configs/KITTI360EX-O_FlowLens_ablation_SpyNet.json
+# spynet消融实验[304 server-cuda0, 1进行中]
+set CUDA_VISIBLE_DEVICES=0,1
+CUDA_VISIBLE_DEVICES=0,1 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_SpyNet.json
 
-# spynet消融实验[304 server-cuda2]
-CUDA_VISIBLE_DEVICES=2,3 python train.py -c configs/KITTI360EX-O_FlowLens_ablation_SpyNet-MFN-teacher.json
+# spynet消融实验[304 server-cuda2进行中]
+set CUDA_VISIBLE_DEVICES=2
+CUDA_VISIBLE_DEVICES=2 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_SpyNet-MFN-teacher.json
+
+# 拆掉dcn的消融实验[304 server-cuda3进行中]
+set CUDA_VISIBLE_DEVICES=3
+CUDA_VISIBLE_DEVICES=3 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_DCN.json
 

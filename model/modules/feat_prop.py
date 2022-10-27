@@ -236,6 +236,7 @@ class BidirectionalPropagation(nn.Module):
                                                                        flow_n2)
                         else:
                             # 认为两次光流对齐足够准，直接将对齐后的特征用1x1卷积融合
+                            # TODO: 这里可以考虑使用两个3x3卷积融合。。。
                             feat_prop = self.simple_fusion[module_name](cond)
 
                     feat = [feat_current] + [
