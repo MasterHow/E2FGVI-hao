@@ -23,7 +23,8 @@ class MaskFlowNetS(nn.Module):
     ):
         super().__init__()
 
-        self.maskflownetS = init_model(config_file, pretrained, device=device)
+        # 默认使用预训练，注释掉
+        # self.maskflownetS = init_model(config_file, pretrained, device=device)
 
         if use_pretrain:
             if isinstance(pretrained, str):

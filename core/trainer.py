@@ -531,7 +531,7 @@ class Trainer:
                 for i in glob.glob(os.path.join(model_path, '*.pth'))
             ]
             ckpts.sort()
-            latest_epoch = ckpts[-1] if len(ckpts) > 0 else None
+            latest_epoch = ckpts[-1].split('_')[-1] if len(ckpts) > 0 else None
 
         if latest_epoch is not None:
             gen_path = os.path.join(model_path,
