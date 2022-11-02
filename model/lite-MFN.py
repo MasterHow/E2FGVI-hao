@@ -156,9 +156,14 @@ class InpaintGenerator(BaseNetwork):
                 hidden = 512    # default
                 reduction = 1   # default
             else:
-                # small model
-                channel = 64
-                hidden = 128
+                # small model v1
+                # channel = 64
+                # hidden = 128
+                # reduction = 2
+
+                # v2
+                channel = 128
+                hidden = 256
                 reduction = 2
         else:
             if not small_model:

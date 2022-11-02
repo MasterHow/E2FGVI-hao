@@ -130,7 +130,10 @@ def main_worker(args):
     # create results directory
     # default
     # result_path = os.path.join('results', f'{args.model}_{args.dataset}')
-    ckpt = args.ckpt.split('/')[-1]
+    if args.ckpt is not None:
+        ckpt = args.ckpt.split('/')[-1]
+    else:
+        ckpt = 'random'
     if args.fov is not None:
         if args.reverse:
             result_path = os.path.join('results', f'{args.model}+_{ckpt}_{args.fov}_{args.dataset}')
