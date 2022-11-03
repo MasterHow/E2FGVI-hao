@@ -1996,7 +1996,7 @@ Mix-FFN确实也很吊
 9层blk early fusion bs4 lr0.50(0.25x2)
 python train.py -c configs/KITTI360EX-O_FlowLens_early.json
 序列测试+只使用之前的参考帧:
-CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-O_FlowLens_early/gen_405000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//OuterPinhole --fov fov10 --past_ref --timing --memory --reverse --save_results
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-O_FlowLens_early/gen_405000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//OuterPinhole --fov fov5 --past_ref --timing --memory --save_results
 CUDA_VISIBLE_DEVICES=1 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-O_FlowLens_early/gen_405000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//OuterPinhole --fov fov20 --past_ref --timing --memory --reverse --save_results
 
 [500k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.00/0.9779/0.184
@@ -2032,6 +2032,16 @@ All average forward run time: (0.155976) per frame[矩池云3090]
 [405k, Outer Avg.+]
 看最后用哪个吧，要是用early那就这个了405k的
 
+推理的时候detach一下
+[405k, Outer Fov5][矩池云3090]
+[405k, Outer Fov10][矩池云3090]
+[405k, Outer Fov20][矩池云3090]
+[405k, Outer Avg.]
+
+推理的时候clear一下？
+
+不保存测一下速度？
+
 
 # spynet消融实验[已完成]需要82.6h
 set CUDA_VISIBLE_DEVICES=0,1
@@ -2061,9 +2071,19 @@ spynet推理 MFN监督
 set CUDA_VISIBLE_DEVICES=2
 CUDA_VISIBLE_DEVICES=2 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_SpyNet-MFN-teacher.json
 
-# 拆掉dcn的消融实验[3090进行中]
+# 拆掉dcn的消融实验[已完成]
 set CUDA_VISIBLE_DEVICES=3
 CUDA_VISIBLE_DEVICES=3 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_DCN.json
+220k停止
+默认的半滑窗逻辑测试：
+python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_DCN/gen_220000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[220k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 41.45/0.9986/0.014
+All average forward run time: (0.039803) per frame[本地3090]
+[220k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 35.59/0.9952/0.026
+All average forward run time: (0.039804) per frame[本地3090]
+[220k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.64/0.9778/0.071
+All average forward run time: (0.040184) per frame[本地3090]
+[220k, Inner Avg] 35.16 0.9905 0.037
 
 # 测试FlowLens_v2 Youtube
 默认的半滑窗逻辑测试：
@@ -2126,4 +2146,56 @@ STTN
 {'transformer': 14703872.571633898, 'encoder': 14703872.571633898, 'decoder': 172311.00669883474}
 950936371200.0
 All average forward run time: (0.019039) per frame
+
+PUT
+FLOPs不测了 速度和扩展率有关系，三个视场角各取10张算平均值好了，可以写到补充材料里(https://github.com/liuqk3/PUT/issues/4)作者自己也承认了推理速度非常慢
+
+SRN
+0.04777306079864502s [P100]
+
+LaMa
+0.1324786325s [P100]
+FLOPs:104504463360.0
+
+P100换算3090 1.5倍速度左右
+
+FlowLens-early-vanilla
+{'encoder': 1485324.2891669194, 'decoder': 34812.28802734967, 'feat_prop_module': 1485324.2891669194, 'ss': 5941297.156667678, 'sc': 1485324.2891669194, 'transformer': 5941297.156667678, 'update_MFN': 185665.53614586493}
+#############FLOPs:629871921136.0
+#############PARAMES:54280137.0
+--Transformer
+#############FLOPs:169869924864.0
+#############PARAMES:29190358.0
+--Transformer 'vanilla'
+#############FLOPs:171406416384.0
+#############PARAMES:29458134.0
+
+FlowLens-early-local
+{'encoder': 1485246.7824118065, 'decoder': 34810.47146277672, 'feat_prop_module': 1485246.7824118065, 'ss': 5940987.129647226, 'sc': 1485246.7824118065, 'transformer': 5940987.129647226, 'update_MFN': 185655.84780147581}
+629898463216.0
+#############FLOPs:628361971696.0
+#############PARAMES:54017481.0
+--Transformer CSWin
+#############FLOPs:171406416384.0
+#############PARAMES:29458134.0
+--Transformer 'Local'
+#############FLOPs:169869924864.0
+#############PARAMES:29190358.0
+
+FlowLens-early-focal
+{'encoder': 1489256.40315759, 'decoder': 34904.446949006015, 'feat_prop_module': 1489256.40315759, 'ss': 5957025.61263036, 'sc': 1489256.40315759, 'transformer': 5957025.61263036, 'update_MFN': 186157.05039469874}
+628483968496.0
+#############FLOPs:628483968496.0
+#############PARAMES:54017527.0
+--Transformer
+#############FLOPs:169991921664.0
+#############PARAMES:29190404.0
+
+FlowLens-early-DDCA
+{'encoder': 1485259.10306255, 'decoder': 34810.76022802852, 'feat_prop_module': 1485259.10306255, 'ss': 5941036.4122502, 'sc': 1485259.10306255, 'transformer': 5941036.4122502, 'update_MFN': 185657.38788281876}
+#############FLOPs:629904361456.0
+#############PARAMES:54285315.0
+--Transformer
+#############FLOPs:171412314624.0
+#############PARAMES:29458192.0
 

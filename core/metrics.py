@@ -47,7 +47,7 @@ def get_flops(net):
     for name in myParameterlist:
         myFlopslist[name] = myParameterlist[name] * average
 
-    return myFlopslist, flops
+    return myFlopslist, flops, params
 
 
 def calculate_epe(flow1, flow2):

@@ -1082,6 +1082,13 @@ class InpaintGenerator(BaseNetwork):
             #     trans_feat = self.transformer([trans_feat, fold_output_size])   # default temporal focal trans block
             # else:
             #     trans_feat = self.transformer([trans_feat, fold_output_size, l_t])  # add local frame nums as input
+
+            # test FLOPs
+            # from thop import profile
+            # flops, params = profile(self.transformer, inputs=([trans_feat, fold_output_size, l_t],))
+            # print('#############FLOPs:' + str(flops))
+            # print('#############PARAMES:' + str(params))
+
             trans_feat = self.transformer([trans_feat, fold_output_size, l_t])  # 比默认行为多传一个lt
 
             # 软组合

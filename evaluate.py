@@ -116,9 +116,10 @@ def main_worker(args):
 
     # 计算FLOPs
     if args.FLOPs:
-        myflops, flops = get_flops(model)
+        myflops, flops, params = get_flops(model)
         print(myflops)
-        print(flops)
+        print('#############FLOPs:'+str(flops))
+        print('#############PARAMES:'+str(params))
 
     model.eval()
 
