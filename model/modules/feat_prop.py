@@ -230,10 +230,17 @@ class BidirectionalPropagation(nn.Module):
 
                         cond = torch.cat([cond_n1, feat_current, cond_n2], dim=1)
                         if not self.skip_dcn:
+                            # default
                             feat_prop = torch.cat([feat_prop, feat_n2], dim=1)
                             feat_prop = self.deform_align[module_name](feat_prop, cond,
                                                                        flow_n1,
                                                                        flow_n2)
+
+                            # temp for wo/flow ablation
+                            # feat_prop = self.deform_align[module_name](torch.cat([feat_prop, feat_n2], dim=1),
+                            #                                            torch.cat([feat_prop, feat_current, feat_n2], dim=1),
+                            #                                            torch.zeros_like(flow_n1),
+                            #                                            torch.zeros_like(flow_n2))
                         else:
                             # 认为两次光流对齐足够准，直接将对齐后的特征用1x1卷积融合
                             # TODO: 这里可以考虑使用两个3x3卷积融合。。。

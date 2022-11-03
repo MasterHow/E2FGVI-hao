@@ -14,7 +14,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from core.dataset import TestDataset
-from core.metrics import calc_psnr_and_ssim, calculate_i3d_activations, calculate_vfid, init_i3d_model
+from core.metrics import calc_psnr_and_ssim, calculate_i3d_activations, calculate_vfid, init_i3d_model, get_flops
 
 # global variables
 # w h can be changed by args.output_size
@@ -113,6 +113,13 @@ def main_worker(args):
         else:
             model.load_state_dict(data)
         print(f'Loading from: {args.ckpt}')
+
+    # 计算FLOPs
+    if args.FLOPs:
+        myflops, flops = get_flops(model)
+        print(myflops)
+        print(flops)
+
     model.eval()
 
     total_frame_psnr = []
@@ -130,7 +137,10 @@ def main_worker(args):
     # create results directory
     # default
     # result_path = os.path.join('results', f'{args.model}_{args.dataset}')
-    ckpt = args.ckpt.split('/')[-1]
+    if args.ckpt is not None:
+        ckpt = args.ckpt.split('/')[-1]
+    else:
+        ckpt = 'random'
     if args.fov is not None:
         if args.reverse:
             result_path = os.path.join('results', f'{args.model}+_{ckpt}_{args.fov}_{args.dataset}')
@@ -589,6 +599,8 @@ if __name__ == '__main__':
                         help='test with horizontal and vertical reverse augmentation')
     parser.add_argument('--model_win_size', type=int, nargs='+', default=[5, 9])
     parser.add_argument('--model_output_size', type=int, nargs='+', default=[60, 108])
+    parser.add_argument('--FLOPs', action='store_true', default=False,
+                        help='calc FLOPs of the model')
     args = parser.parse_args()
 
     if args.dataset == 'KITTI360-EX':
