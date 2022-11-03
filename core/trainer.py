@@ -543,14 +543,18 @@ class Trainer:
 
             if self.config['global_rank'] == 0:
                 print(f'Loading model from {gen_path}...')
-            dataG = torch.load(gen_path, map_location=self.config['device'])
+            # dataG = torch.load(gen_path, map_location=self.config['device'])
+            dataG = torch.load(gen_path, map_location='cpu')
             self.netG.load_state_dict(dataG)
             if not self.config['model']['no_dis']:
+                # dataD = torch.load(dis_path,
+                #                    map_location=self.config['device'])
                 dataD = torch.load(dis_path,
-                                   map_location=self.config['device'])
+                                   map_location='cpu')
                 self.netD.load_state_dict(dataD)
 
-            data_opt = torch.load(opt_path, map_location=self.config['device'])
+            # data_opt = torch.load(opt_path, map_location=self.config['device'])
+            data_opt = torch.load(opt_path, map_location='cpu')
             self.optimG.load_state_dict(data_opt['optimG'])
             self.scheG.load_state_dict(data_opt['scheG'])
             if not self.config['model']['no_dis']:

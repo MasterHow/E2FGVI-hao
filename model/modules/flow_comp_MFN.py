@@ -29,7 +29,8 @@ class MaskFlowNetS(nn.Module):
         if use_pretrain:
             if isinstance(pretrained, str):
                 print("load pretrained MaskFlowNetS...")
-                self.maskflownetS = init_model(config_file, pretrained, device=device)
+                # self.maskflownetS = init_model(config_file, pretrained, device=device)
+                self.maskflownetS = init_model(config_file, pretrained, device='cpu')
                 # load_checkpoint(self, pretrained, strict=True)
             elif pretrained is not None:
                 raise TypeError('[pretrained] should be str or None, '
