@@ -1948,37 +1948,182 @@ CUDA_VISIBLE_DEVICES=2 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/
 
 
 
-# 基于early进行消融实验 使用F3N替换MixF3N [本地3090Ti] 预计需要87.5h
+# 基于early进行消融实验 使用F3N替换MixF3N [已完成] 预计需要87.5h
 9层blk会巨慢 所以使用8层blk 反正现在表格里的early也是用8层
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_F3N.json
+python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_F3N/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.94/0.9990/0.005
+All average forward run time: (0.046484) per frame[矩池云3090]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.63/0.9960/0.021
+All average forward run time: (0.046844) per frame[矩池云3090]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.88/0.9781/0.065
+All average forward run time: (0.047075) per frame[矩池云3090]
+[250k, Inner Avg]36.15 0.9910 0.030
 
 # 4卡训练FlowLens early在youtube上 [zhouyifan进行中]
 python train.py -c configs/train_flowlens_youtube_v2.json
 
-# 基于early进行消融实验 使用FFN替换MixF3N [本地3090] 预计需要89.5h
+# 基于early进行消融实验 使用FFN替换MixF3N [已完成] 预计需要89.5h
 9层blk会巨慢 所以使用8层blk 反正现在表格里的early也是用8层
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_FFN.json
+python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_FFN/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.96/0.9990/0.007
+All average forward run time: (0.045372) per frame[矩池云3090]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.54/0.9959/0.018
+All average forward run time: (0.045567) per frame[矩池云3090]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.93/0.9789/0.072
+All average forward run time: (0.045088) per frame[矩池云3090]
+[250k, Inner Avg]36.14 0.9912 0.032
 
-# 基于early进行消融实验 使用MixFFN替换MixF3N [矩池云单卡3090 tmux0] 预计需要105h
+# 基于early进行消融实验 使用MixFFN替换MixF3N [已完成]
 9层blk会巨慢 所以使用8层blk 反正现在表格里的early也是用8层
 early fusion
 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_MixFFN.json
+python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_MixFFN/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.95/0.9990/0.005
+All average forward run time: (0.039459) per frame[3090Ti]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.77/0.9961/0.017
+All average forward run time: (0.039310) per frame[3090Ti]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.19/0.9796/0.043
+All average forward run time: (0.040138) per frame[3090Ti]
+[250k, Inner Avg]36.30 0.9915(6) 0.022(4)
+Mix-FFN确实也很吊
 
-# 重新在KITTI360-EXO上训练FlowLens-early[矩池云双卡3090 tmux0] 0-500k 约需要193.2h 8.0天 还需要183h
+
+# 重新在KITTI360-EXO上训练FlowLens-early[已完成] 0-500k 双卡需要195h
 9层blk early fusion bs4 lr0.50(0.25x2)
 python train.py -c configs/KITTI360EX-O_FlowLens_early.json
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-O_FlowLens_early/gen_405000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//OuterPinhole --fov fov10 --past_ref --timing --memory --reverse --save_results
+CUDA_VISIBLE_DEVICES=1 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-O_FlowLens_early/gen_405000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//OuterPinhole --fov fov20 --past_ref --timing --memory --reverse --save_results
 
-# spynet消融实验[304 server-cuda0, 1进行中]
+[500k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.00/0.9779/0.184
+All average forward run time: (0.051131) per frame[矩池云3090]
+[500k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 19.92/0.9421/0.280
+All average forward run time: (0.050834) per frame[矩池云3090]
+[500k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.14/0.8710/0.378
+All average forward run time: (0.051179) per frame[矩池云3090]
+[500k, Outer Avg.]
+
+[500k, Outer Fov5+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.50/0.9794/0.191
+All average forward run time: (0.157096) per frame[矩池云3090]
+[500k, Outer Fov10+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.23/0.9431/0.295
+All average forward run time: (0.157681) per frame[矩池云3090]
+[500k, Outer Fov20+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.64/0.8720/0.418
+All average forward run time: (0.155860) per frame[矩池云3090]
+[500k, Outer Avg.+]
+
+在400-500之间搜索最优模型
+没跑完机器释放了，跑了一半hhh
+就从这一半里面挑，挑到了最好的是405k的
+[405k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.07/0.9781/0.185[矩池云3090]
+[405k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.00/0.9427/0.282[矩池云3090]
+[405k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.32/0.8733/0.375[矩池云3090]
+[405k, Outer Avg.]
+
+[405k, Outer Fov5+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.51/0.9794/0.194
+All average forward run time: (0.155034) per frame[矩池云3090]
+[405k, Outer Fov10+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.29/0.9438/0.297
+All average forward run time: (0.156658) per frame[矩池云3090]
+[405k, Outer Fov20+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.70/0.8733/0.409
+All average forward run time: (0.155976) per frame[矩池云3090]
+[405k, Outer Avg.+]
+看最后用哪个吧，要是用early那就这个了405k的
+
+
+# spynet消融实验[已完成]需要82.6h
 set CUDA_VISIBLE_DEVICES=0,1
-CUDA_VISIBLE_DEVICES=0,1 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_SpyNet.json
+CUDA_VISIBLE_DEVICES=0 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_SpyNet.json
+这个用成MixFFN了，不是MixF3N。。。
+python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_SpyNet/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 43.07/0.9990/0.008
+All average forward run time: (0.034706) per frame[3090Ti]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.63/0.9960/0.023[3090Ti]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.12/0.9794/0.064
+All average forward run time: (0.034765) per frame[3090Ti]
+[250k, Inner Avg] 36.27 9915 0.032
 
-# spynet消融实验[304 server-cuda2进行中]
+# 拆除flow消融实验
+# 根据spynet消融，直接不使用光流结果输入dcn
+python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_ablation_SpyNet/gen_250000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84
+[250k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.11/0.9988/0.008
+All average forward run time: (0.034975) per frame[3090Ti]
+[250k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 35.55/0.9949/0.025
+All average forward run time: (0.034788) per frame[3090Ti]
+[250k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 28.26/0.9749/0.071
+All average forward run time: (0.034663) per frame[3090Ti]
+[250k, Inner Avg]35.31 0.9895 0.035 (36.05 0.9904 0.035)
+
+# spynet消融实验[未开始]
+spynet推理 MFN监督
 set CUDA_VISIBLE_DEVICES=2
 CUDA_VISIBLE_DEVICES=2 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_SpyNet-MFN-teacher.json
 
-# 拆掉dcn的消融实验[304 server-cuda3进行中]
+# 拆掉dcn的消融实验[3090进行中]
 set CUDA_VISIBLE_DEVICES=3
 CUDA_VISIBLE_DEVICES=3 python train.py -c configs/KITTI360EX-I_FlowLens_ablation_DCN.json
+
+# 测试FlowLens_v2 Youtube
+默认的半滑窗逻辑测试：
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_temp/gen_250000.pth --dataset davis --data_root datasets/ --good_fusion --timing --memory --same_memory
+用的这个CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_temp/gen_250000.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
+[245k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 31.99/0.9673/0.139
+All average forward run time: (0.113316) per frame[矩池云3090]
+[250k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.12/0.9677/0.135
+All average forward run time: (0.113141) per frame[矩池云3090]
+[295k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.18/0.9680/0.136
+All average forward run time: (0.112942) per frame[矩池云3090]
+[300k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.00/0.9672/0.139
+All average forward run time: (0.109825) per frame[矩池云3090]
+[295k, davis + ]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.50/0.9695/0.147
+All average forward run time: (0.351661) per frame[矩池云3090]
+到时候先调好的，然后微调，+youtube val+D train 新的train list
+3090Ti闲着呢，跑个小模型？
+
+# 确定小模型结构
+4层blk All average forward run time: (0.034997) per frame [3090Ti]
+5层blk + SpyNet(用MFN监督) All average forward run time: (0.031979) per frame [3090Ti]
+砍掉一半的通道数和隐藏层 All average forward run time: (0.021160) per frame [3090Ti]
+测试一下e2fgvi作为对比 All average forward run time: (0.034636) per frame [3090Ti]确实我的小模型会更快
+
+
+# 训练 FlowLens-S 在KITTI360-EXI上[3090Ti]进行中
+early，5层blk，隐藏层通道数减半，spynet并使用MaskFlowNetS监督; bs3 单卡训练 lr0.375 500k次
+python train.py -c configs/KITTI360EX-I_FlowLens_early_small_v2.json
+
+
+# 测试模型的FLOPs[矩池云3090]
+输入8张 432 240
+FlowLens-early
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --dataset KITTI360-EX --data_root datasets//KITTI-360EX//OuterPinhole --fov fov5 --past_ref --timing --memory --FLOPs
+{'encoder': 1485259.10306255, 'decoder': 34810.76022802852, 'feat_prop_module': 1485259.10306255, 'ss': 5941036.4122502, 'sc': 1485259.10306255, 'transformer': 5941036.4122502, 'update_MFN': 185657.38788281876}
+629904361456.0
+All average forward run time: (0.049905) per frame
+
+FlowLens-late
+{'encoder': 1485259.10306255, 'decoder': 34810.76022802852, 'feat_prop_module': 1485259.10306255, 'ss': 5941036.4122502, 'sc': 1485259.10306255, 'transformer': 5941036.4122502, 'update_MFN': 185657.38788281876}
+629904361456.0
+All average forward run time: (0.049905) per frame
+
+FlowLens-small
+{'encoder': 1149287.331506238, 'decoder': 53872.84366435491, 'feat_prop_module': 1149287.331506238, 'ss': 4597149.326024952, 'sc': 1149287.331506238, 'transformer': 4597149.326024952, 'update_MFN': 35915.22910956994}
+222445263360.0
+All average forward run time: (0.022500) per frame
+
+E2FGVI
+{'encoder': 1906001.8251425703, 'decoder': 44671.917776778995, 'feat_prop_module': 1906001.8251425703, 'ss': 7624007.300570281, 'sc': 93394089.43198594, 'transformer': 7624007.300570281, 'update_spynet': 29781.27851785266}
+601287333888.0
+All average forward run time: (0.038092) per frame
+
+FuseFormer
+{'transformer': 6940933.491116476, 'ss': 6940933.491116476, 'add_pos_emb': 4997472113.603863, 'sc': 85026435.26617683, 'encoder': 1735233.372779119, 'decoder': 40669.532174510605}
+479808552960.0
+All average forward run time: (0.032822) per frame
+
+STTN
+{'transformer': 14703872.571633898, 'encoder': 14703872.571633898, 'decoder': 172311.00669883474}
+950936371200.0
+All average forward run time: (0.019039) per frame
 

@@ -1,12 +1,53 @@
 import numpy as np
 from skimage import measure
 from scipy import linalg
+from thop import profile
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from core.utils import to_tensors
+
+
+def get_parameter(net):
+    """return a dictionary that includes every layer name and count of parameter"""
+
+    nameList = []
+    myReturnList = {}
+    for k in net.state_dict():
+        nameList.append(k)
+
+    # for index in range(0, len(nameList), 2):
+    #     parameter = net.state_dict()[nameList[index]].numel() + net.state_dict()[nameList[index + 1]].numel()
+    #     myReturnList[nameList[index].split('.')[0]] = parameter
+
+    for index in range(0, len(nameList)):
+        parameter = net.state_dict()[nameList[index]].numel()
+        myReturnList[nameList[index].split('.')[0]] = parameter
+
+    return myReturnList
+
+
+def get_flops(net):
+    myParameterlist = get_parameter(net)
+
+    myInput = torch.rand(1, 8, 3, 240, 432).float().cuda()     # b t c h w
+    # myInput = torch.rand(1, 8, 3, 432, 240).float().cuda()  # b t c h w  for sttn, hw和其他人是反着的
+    # myMask = torch.rand(1, 8, 1, 432, 240).float().cuda()  # b t c h w  for sttn
+
+    flops, params = profile(net, inputs=(myInput, 5))   # flowlens+e2fgvi 5 是local frames个数
+    # flops, params = profile(net, inputs=(myInput,))  # fuseformer
+    # flops, params = profile(net, inputs=(myInput, myMask))  # sttn
+
+    average = flops/params
+
+    myFlopslist = {}
+
+    for name in myParameterlist:
+        myFlopslist[name] = myParameterlist[name] * average
+
+    return myFlopslist, flops
 
 
 def calculate_epe(flow1, flow2):
