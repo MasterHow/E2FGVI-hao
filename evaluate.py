@@ -12,6 +12,7 @@ from PIL import Image
 
 import torch
 from torch.utils.data import DataLoader
+from mmcv.cnn import get_model_complexity_info
 
 from core.dataset import TestDataset
 from core.metrics import calc_psnr_and_ssim, calculate_i3d_activations, calculate_vfid, init_i3d_model, get_flops
@@ -116,8 +117,13 @@ def main_worker(args):
 
     # 计算FLOPs
     if args.FLOPs:
-        myflops, flops, params = get_flops(model)
-        print(myflops)
+        # myflops, flops, params = get_flops(model)
+        # print(myflops)
+
+        # input_shape = [1, 8, 3, 240, 432]
+        input_shape = (8, 3, 240, 432)
+        flops, params = get_model_complexity_info(model, input_shape)
+
         print('#############FLOPs:'+str(flops))
         print('#############PARAMES:'+str(params))
 

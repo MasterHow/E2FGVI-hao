@@ -2203,3 +2203,11 @@ FlowLens-early-DDCA
 early，5层blk，隐藏层通道数减半，spynet并使用MaskFlowNetS监督; bs4 单卡训练 lr0.5 500k次
 python train.py -c configs/KITTI360EX-O_FlowLens_early_small_v2.json
 
+# 用MMCV重新测试FLOPs
+# FlowLens
+#############FLOPs:628.78 GFLOPs
+#############PARAMES:55.15 M
+
+# FlowLens-small
+
+

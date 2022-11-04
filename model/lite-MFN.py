@@ -1008,7 +1008,7 @@ class InpaintGenerator(BaseNetwork):
 
         return pred_flows_forward, pred_flows_backward
 
-    def forward(self, masked_frames, num_local_frames):
+    def forward(self, masked_frames, num_local_frames=5):
         l_t = num_local_frames
         b, t, ori_c, ori_h, ori_w = masked_frames.size()
 
