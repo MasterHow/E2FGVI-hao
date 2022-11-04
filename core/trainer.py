@@ -95,10 +95,10 @@ class Trainer:
                     self.flow_comp_loss = FlowCompletionLoss(estimator='spy').to(self.config['device'])  # default
                 else:
                     # mask flow net s 监督 spynet
-                    self.flow_comp_loss = FlowCompletionLoss(estimator='mfn').to(self.config['device'])
+                    self.flow_comp_loss = FlowCompletionLoss(estimator='mfn', device=self.config['device']).to(self.config['device'])
             else:
                 # mask flow net s 监督 mask flow net s
-                self.flow_comp_loss = FlowCompletionLoss(estimator='mfn').to(self.config['device'])
+                self.flow_comp_loss = FlowCompletionLoss(estimator='mfn', device=self.config['device']).to(self.config['device'])
 
         # setup models including generator and discriminator
         net = importlib.import_module('model.' + config['model']['net'])

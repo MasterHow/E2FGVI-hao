@@ -11,13 +11,13 @@ from model.modules.flow_comp_MFN import MaskFlowNetS
 
 class FlowCompletionLoss(nn.Module):
     """Flow completion loss"""
-    def __init__(self, estimator='spy'):
+    def __init__(self, estimator='spy', device='cuda:0'):
         super().__init__()
         if estimator == 'spy':
             # default flow compute with spynet:
             self.fix_spynet = SPyNet()
         elif estimator == 'mfn':
-            self.fix_spynet = MaskFlowNetS()
+            self.fix_spynet = MaskFlowNetS(device=device)
         else:
             raise TypeError('[estimator] should be spy or mfn, '
                             f'but got {estimator}.')

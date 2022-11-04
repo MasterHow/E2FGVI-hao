@@ -2199,3 +2199,7 @@ FlowLens-early-DDCA
 #############FLOPs:171412314624.0
 #############PARAMES:29458192.0
 
+# 训练 FlowLens-S 在KITTI360-EXO上[3090]进行中
+early，5层blk，隐藏层通道数减半，spynet并使用MaskFlowNetS监督; bs4 单卡训练 lr0.5 500k次
+python train.py -c configs/KITTI360EX-O_FlowLens_early_small_v2.json
+
