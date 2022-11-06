@@ -135,7 +135,8 @@ class deconv(nn.Module):
 
 
 class InpaintGenerator(BaseNetwork):
-    def __init__(self, init_weights=True, flow_align=True, skip_dcn=False, spy_net=False, flow_guide=False,
+    def __init__(self, init_weights=True, flow_align=True, skip_dcn=False, freeze_dcn=False, spy_net=False,
+                 flow_guide=False,
                  token_fusion=False, token_fusion_simple=False, fusion_skip_connect=False,
                  memory=True, max_mem_len=1, compression_factor=1, mem_pool=False, store_lf=False, align_cache=False,
                  sub_token_align=False, sub_factor=1, half_memory=False, last_memory=False, early_memory=True,
@@ -264,6 +265,7 @@ class InpaintGenerator(BaseNetwork):
         window_size = window_size                   # 窗口的尺寸，相当于patch数量除以4
         output_size = output_size                   # 输出的尺寸，训练尺寸//4
         spy_net = spy_net                           # 如果为True，使用spynet替换maskflownets计算光流
+        freeze_dcn = freeze_dcn                     # 如果为True，冻结dcn参数
 
         # encoder
         # self.encoder = Encoder()    # default
@@ -290,7 +292,8 @@ class InpaintGenerator(BaseNetwork):
         #     nn.Conv2d(64//reduction, 3, kernel_size=3, stride=1, padding=1))
 
         # feature propagation module
-        self.feat_prop_module = BidirectionalPropagation(channel // 2, flow_align=flow_align, skip_dcn=skip_dcn)
+        self.feat_prop_module = BidirectionalPropagation(channel // 2, flow_align=flow_align, skip_dcn=skip_dcn,
+                                                         freeze_dcn=freeze_dcn)
 
         # soft split and soft composition
         kernel_size = (7, 7)    # 滑块的大小

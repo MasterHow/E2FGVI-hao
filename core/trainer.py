@@ -314,6 +314,12 @@ class Trainer:
             else:
                 self.small_model = False
 
+            # 是否冻结dcn参数
+            if config['model']['freeze_dcn'] != 0:
+                self.freeze_dcn = True
+            else:
+                self.freeze_dcn = False
+
             if self.cs_trans:
                 # cs trans 主干需要的参数
 
@@ -355,7 +361,8 @@ class Trainer:
 
                 # 使用cs主干
                 self.netG = net.InpaintGenerator(
-                    skip_dcn=self.skip_dcn, spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
+                    skip_dcn=self.skip_dcn, freeze_dcn=self.freeze_dcn,
+                    spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
@@ -373,7 +380,8 @@ class Trainer:
             else:
                 # 使用tf主干
                 self.netG = net.InpaintGenerator(
-                    skip_dcn=self.skip_dcn, spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
+                    skip_dcn=self.skip_dcn, freeze_dcn=self.freeze_dcn,
+                    spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
@@ -462,9 +470,16 @@ class Trainer:
             },
         ]
 
-        self.optimG = torch.optim.Adam(optim_params,
-                                       betas=(self.config['trainer']['beta1'],
-                                              self.config['trainer']['beta2']))
+        if not self.freeze_dcn:
+            # default manner
+            self.optimG = torch.optim.Adam(optim_params,
+                                           betas=(self.config['trainer']['beta1'],
+                                                  self.config['trainer']['beta2']))
+        else:
+            # freeze dcn in opt
+            self.optimG = torch.optim.Adam(filter(lambda p: p.requires_grad, optim_params),
+                                           betas=(self.config['trainer']['beta1'],
+                                                  self.config['trainer']['beta2']))
 
         if not self.config['model']['no_dis']:
             self.optimD = torch.optim.Adam(

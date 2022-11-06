@@ -2204,10 +2204,42 @@ early，5层blk，隐藏层通道数减半，spynet并使用MaskFlowNetS监督; 
 python train.py -c configs/KITTI360EX-O_FlowLens_early_small_v2.json
 
 # 用MMCV重新测试FLOPs
+相对值的差没啥区别
 # FlowLens
 #############FLOPs:628.78 GFLOPs
 #############PARAMES:55.15 M
 
 # FlowLens-small
+#############FLOPs:244.06 GFLOPs
+#############PARAMES:26.83 M
 
+# vanilla
+#############FLOPs:628.74 GFLOPs
+#############PARAMES:55.15 M
+
+#############FLOPs:627.23 GFLOPs
+#############PARAMES:54.88 M
+
+#############FLOPs:627.23 GFLOPs
+#############PARAMES:54.88 M
+
+# local
+#############FLOPs:628.77 GFLOPs
+#############PARAMES:55.15 M
+
+# focal
+#############FLOPs:627.24 GFLOPs
+#############PARAMES:54.88 M
+
+# 用MMCV测试clip recurrent layer的FLOPs
+计算量只占据 4.269 - 2.850 = 1.419% FLOPs
+计算量一共只有 9.095 GFLOPs
+参数量只占据 8.482 - 5.616 = 2.866% PARAMs
+参数量一共只有 1.58 M
+总共的参数量为 55.15 M
+画个饼图说明一下好了
+
+# 测试ubuntu微调的flowlens
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/Big_models/FlowLens_youtube_v2_ubuntu/gen_300000.pth --dataset davis --data_root E://Ubuntu-data// --timing --memory --same_memory
+[300k, davis][本地3070Ti]
 

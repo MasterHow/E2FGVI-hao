@@ -95,7 +95,7 @@ class ConvBNReLU(nn.Module):
 
 
 class BidirectionalPropagation(nn.Module):
-    def __init__(self, channel, flow_align=False, skip_dcn=False):
+    def __init__(self, channel, flow_align=False, skip_dcn=False, freeze_dcn=False):
         super(BidirectionalPropagation, self).__init__()
         modules = ['backward_', 'forward_']
 
@@ -127,6 +127,17 @@ class BidirectionalPropagation(nn.Module):
             )
 
         self.fusion = nn.Conv2d(2 * channel, channel, 1, 1, 0)
+
+        if freeze_dcn:
+            # 冻结dcn
+            self.freeze(self.deform_align)
+
+    @staticmethod
+    def freeze(layer):
+        """For freezing some layers."""
+        for child in layer.children():
+            for param in child.parameters():
+                param.requires_grad = False
 
     def forward(self, x, flows_backward, flows_forward):
         """
