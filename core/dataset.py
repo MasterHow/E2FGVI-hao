@@ -122,12 +122,19 @@ class TrainDataset_Mem(torch.utils.data.Dataset):
     """
     Sequence Video Train Dataloader by Hao, based on E2FGVI train loader.
     same_mask(bool): If True, use same mask until video changes to the next video.
+    random_mask(bool): If True, use random mask rather than FoV mask for KITTI360.
     """
     def __init__(self, args: dict, debug=False, start=0, end=1, batch_size=1, same_mask=False):
         self.args = args
         self.num_local_frames = args['num_local_frames']
         self.num_ref_frames = args['num_ref_frames']
         self.size = self.w, self.h = (args['w'], args['h'])
+
+        # 是否为KITTI360使用随机mask
+        if args['random_mask'] != 0:
+            self.random_mask = True
+        else:
+            self.random_mask = False
 
         if args['name'] != 'KITTI360-EX':
             json_path = os.path.join(args['data_root'], args['name'], 'train.json')
@@ -366,26 +373,8 @@ class TrainDataset_Mem(torch.utils.data.Dataset):
             # 对于非KITTI360-EX数据集，随机创建mask
             if not self.same_mask:
                 # 每次迭代都会生成新形状的随机mask
-                # if self.dataset_name != 'KITTI360-EX':
                 all_masks = create_random_shape_with_random_motion(
                     self.video_dict[video_name], imageHeight=self.h, imageWidth=self.w)
-                # else:
-                #     # 对于KITTI360训练，需要读取本地存储的mask
-                #     all_masks = []
-                #     for idx in range(0, self.video_dict[video_name]):
-                #         mask_path = os.path.join(self.args['data_root'],
-                #                                  'test_masks',
-                #                                  video_name,
-                #                                  str(idx).zfill(6) + '.png')
-                #         mask = Image.open(mask_path).resize(self.size,
-                #                                             Image.NEAREST).convert('L')
-                #         mask = np.asarray(mask)
-                #         m = np.array(mask > 0).astype(np.uint8)
-                #         m = cv2.dilate(m,
-                #                        cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)),
-                #                        iterations=4)
-                #         mask = Image.fromarray(m * 255)
-                #         all_masks.append(mask)
 
             else:
                 # 在切换新视频前使用一样的mask参数
@@ -395,6 +384,11 @@ class TrainDataset_Mem(torch.utils.data.Dataset):
                     random_dict=self.random_dict_list[self.batch_buffer])
                 # 更新随机mask的参数
                 self.random_dict_list[self.batch_buffer] = random_dict
+
+        elif self.random_mask:
+            # 如果使用random_mask，则为KITTI360创建随机mask
+            all_masks = create_random_shape_with_random_motion(
+                self.video_dict[video_name], imageHeight=self.h, imageWidth=self.w)
 
         # create sample index
         # 对于KITTI360-EX这样视场角扩展的场景，非局部帧只能从过去的信息中获取
@@ -426,6 +420,9 @@ class TrainDataset_Mem(torch.utils.data.Dataset):
             frames.append(img)
             if self.dataset_name != 'KITTI360-EX':
                 masks.append(all_masks[idx])
+            elif self.random_mask:
+                # 对于KITTI360-EX数据集, 也可以使用random mask
+                masks.append(all_masks[idx])
             else:
                 # 对于KITTI360-EX数据集，读取zip中存储的mask
                 mask_path = os.path.join(self.args['data_root'],
@@ -446,7 +443,8 @@ class TrainDataset_Mem(torch.utils.data.Dataset):
         frames = GroupRandomHorizontalFlip()(frames)
         if self.dataset_name == 'KITTI360-EX':
             # 对于本地读取的mask 也需要随着frame翻转
-            masks = GroupRandomHorizontalFlip()(masks)
+            if not self.random_mask:
+                masks = GroupRandomHorizontalFlip()(masks)
         frame_tensors = self._to_tensors(frames) * 2.0 - 1.0
         mask_tensors = self._to_tensors(masks)
 
