@@ -573,7 +573,13 @@ class Trainer:
 
             # data_opt = torch.load(opt_path, map_location=self.config['device'])
             data_opt = torch.load(opt_path, map_location='cpu')
-            self.optimG.load_state_dict(data_opt['optimG'])
+
+            try:
+                self.optimG.load_state_dict(data_opt['optimG'])
+            except:
+                # fine-tune时优化器参数可能不同
+                pass
+
             self.scheG.load_state_dict(data_opt['scheG'])
             if not self.config['model']['no_dis']:
                 self.optimD.load_state_dict(data_opt['optimD'])

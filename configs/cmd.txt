@@ -2243,7 +2243,7 @@ python train.py -c configs/KITTI360EX-O_FlowLens_early_small_v2.json
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/Big_models/FlowLens_youtube_v2_ubuntu/gen_300000.pth --dataset davis --data_root E://Ubuntu-data// --timing --memory --same_memory
 
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_327500.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
-CUDA_VISIBLE_DEVICES=1 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_325000.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
+CUDA_VISIBLE_DEVICES=1 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_330000.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
 
 
 E2FGVI 33.01 0.9721 0.116
@@ -2271,14 +2271,20 @@ All average forward run time: (0.113934) per frame[矩池云3090]
 [320k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.25/0.9688/0.141
 All average forward run time: (0.112924) per frame[矩池云3090]
 
-[322.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.34/0.9687/0.135            #best
+[322.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.34/0.9687/0.135
 All average forward run time: (0.117947) per frame[矩池云3090]
 
 [325k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.25/0.9684/0.131
 All average forward run time: (0.116518) per frame[矩池云3090]
 
-[327.5k, davis]cuda0
+[327.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.35/0.9691/0.134                #best
+All average forward run time: (0.113260) per frame
 
-[330k, davis]
+[330k, davis] Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.28/0.9686/0.135
+All average forward run time: (0.116228) per frame
+
+
+# 从342.5k开始Ubuntu FlowLens总是爆炸，因此冻结dcn
+
 
 
