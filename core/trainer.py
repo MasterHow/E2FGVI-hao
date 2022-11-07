@@ -477,7 +477,10 @@ class Trainer:
                                                   self.config['trainer']['beta2']))
         else:
             # freeze dcn in opt
-            self.optimG = torch.optim.Adam(filter(lambda p: p.requires_grad, optim_params),
+            self.optimG = torch.optim.Adam([{'params': filter(lambda p: p.requires_grad, optim_params[0]['params'])},
+                                            {'params': filter(lambda p: p.requires_grad, optim_params[1]['params']),
+                                             'lr': self.config['trainer']['lr'] * self.spynet_lr}],
+                                           lr=self.config['trainer']['lr'],
                                            betas=(self.config['trainer']['beta1'],
                                                   self.config['trainer']['beta2']))
 
