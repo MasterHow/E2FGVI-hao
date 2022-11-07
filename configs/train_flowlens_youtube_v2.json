@@ -19,6 +19,7 @@
     },
     "model": {
         "net": "lite-MFN",
+        "load_e2fgvi": 1,
         "no_dis": 0,
         "spy_net": 0,
         "mfn_teach": 1,

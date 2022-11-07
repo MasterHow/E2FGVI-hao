@@ -2285,6 +2285,9 @@ All average forward run time: (0.116228) per frame
 
 
 # 从342.5k开始Ubuntu FlowLens总是爆炸，因此冻结dcn
+还是会爆炸
+
+# 加载E2FGVI的预训练模型
 
 
 

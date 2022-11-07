@@ -110,6 +110,12 @@ class Trainer:
 
         if config['model']['net'] == 'lite-MFN' or config['model']['net'] == 'large-MFN':
 
+            # 加载E2FGVI-HQ的预训练权重
+            if config['model']['load_e2fgvi'] != 0:
+                self.load_e2fgvi = True
+            else:
+                self.load_e2fgvi = False
+
             if config['model']['skip_dcn'] != 0:
                 self.skip_dcn = True
             else:
@@ -564,6 +570,7 @@ class Trainer:
             # dataG = torch.load(gen_path, map_location=self.config['device'])
             dataG = torch.load(gen_path, map_location='cpu')
             self.netG.load_state_dict(dataG)
+
             if not self.config['model']['no_dis']:
                 # dataD = torch.load(dis_path,
                 #                    map_location=self.config['device'])
@@ -591,6 +598,16 @@ class Trainer:
             if self.config['global_rank'] == 0:
                 print('Warnning: There is no trained model found.'
                       'An initialized model will be used.')
+
+        # 加载E2FGVI的预训练权重
+        if self.load_e2fgvi:
+            dataG_e = torch.load('./release_model/E2FGVI-HQ-CVPR22.pth', map_location='cpu')
+            model_dict = self.netG.state_dict()  # 模型参数
+            state_dict = {k: v for k, v in dataG_e.items() if k in model_dict.keys()}
+            print(state_dict)
+            model_dict.update(state_dict)
+            self.netG.load_state_dict(model_dict)
+            print('#'*20, 'Load Params From: ', './release_model/E2FGVI-HQ-CVPR22.pth', '#'*20)
 
     def save(self, it):
         """Save parameters every eval_epoch"""
