@@ -8,7 +8,8 @@
         "w": 336,
         "h": 336,
         "num_local_frames": 5,
-        "num_ref_frames": 3
+        "num_ref_frames": 3,
+        "random_mask": 1
     },
     "losses": {
         "hole_weight": 1,
@@ -19,10 +20,12 @@
     },
     "model": {
         "net": "lite-MFN",
+        "load_e2fgvi": 0,
         "no_dis": 0,
         "spy_net": 1,
         "mfn_teach": 1,
         "skip_dcn": 0,
+        "freeze_dcn": 0,
         "flow_guide": 0,
         "token_fusion": 0,
         "token_fusion_simple": 0,
