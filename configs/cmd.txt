@@ -2433,19 +2433,51 @@ All average forward run time: (0.113600) per frame
 # 不允许相同 ref和local id输入了，测一下精度变化
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_367500.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
 以前的结果都是same id的，那自然是不如我
-[367.5k not same id]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.48/0.9694/0.137        #best
+[367.5k not same id]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.48/0.9694/0.137
 All average forward run time: (0.113204) per frame
 
 # 还是会有重复的id，比如局部窗口有 40 和 50，那么参考帧就会取到两个51
 # 因此更改逻辑，当id重复时，前半部分往前找，后半部分重了往后找，以上面的例子，应该取到39和51
-[367.5k bi-drection id]
+[367.5k bi-drection id]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.50/0.9695/0.137
+All average forward run time: (0.109997) per frame
 
 # 为了保证记忆模型可以正常运算，当局部帧窗口小于11时，会直接复制最后一帧，这样当然不好
 # 因此进一步调整，当局部帧窗口小时，前半部分视频往后找不重复的帧，后半部分视频往前找不重复的帧
-[367.5k LF not same id]
+# 但是这样每个视频的第一次和第二次推理结果是完全一样的
+[367.5k LF not same id]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.51/0.9696/0.138
+All average forward run time: (0.110632) per frame
+这个结果有bug，没有往后找连续帧，而是跳着找了，但是结果更好了，因为不跳着找前两次推理的输入是完全一样的。那我一开始的输入也往前找，直接找到视频的最后一帧不就行了吗
 
+[367.5k LF not same id]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.50/0.9695/0.137
+All average forward run time: (0.111063) per frame
+没bug的结果，嗯，完全没有变化呢
 
-没有找到更好的，把 davis T 和 youtube 0.5 T 加入训练
+# 前面的局部id不够局部窗口大小时，往视频的结尾找(循环的思想，反正是视频处理技术)
+[367.5k LF recurrent id]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.50/0.9696/0.136
+All average forward run time: (0.110872) per frame
+
+# 每次预测对应id的结果都保存下来，最后再平均一下，而不是0.5 0.5这样平均，因为原本的平均逻辑会导致前面算出来的结果权重更小
+--good_fusion
+[367.5k good fusion]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.51/0.9696/0.135       # best
+All average forward run time: (0.112766) per frame[矩池云3090]
+通过一番努力达到了这个精度，可喜可贺
+
+# 再测一下最新的几个ckpt，决定好用哪个来fine-tune，以及用来做对比图，不然后面做对比图没有时间了。
+377.5k-385k
+[377.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.44/0.9694/0.136
+All average forward run time: (0.110352) per frame[矩池云3090]
+[380k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.39/0.9696/0.128
+All average forward run time: (0.113482) per frame[矩池云3090]
+[382.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.35/0.9687/0.129
+All average forward run time: (0.110815) per frame[矩池云3090]
+[385k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.40/0.9690/0.133
+All average forward run time: (0.112863) per frame[矩池云3090]
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_387500.pth --dataset davis --data_root datasets/ --timing --memory --same_memory --good_fusion
+[387.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.45/0.9691/0.137
+All average forward run time: (0.112612) per frame[矩池云3090]
+找了一圈，目前最好的还是367.5k，就用那个了。
+
+没有找到更好的，把 davis T 和 youtube 0.5 T 训练
 
 # 从342.5k开始Ubuntu FlowLens总是爆炸，因此冻结dcn
 还是会爆炸
@@ -2485,3 +2517,9 @@ All average forward run time: (0.042876) per frame[矩池云3090]
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model sttn --ckpt release_model/sttn.pth --dataset youtube-vos --data_root datasets/ --timing --save_results --model_output_size 108 60
 [youtube-vos, STTN]Finish evaluation... Average Frame PSNR/SSIM/VFID: 31.92/0.9598/0.060
 All average forward run time: (0.061929) per frame[矩池云3090]
+
+FlowLens-367.5k
+[367.5k good fusion]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.51/0.9696/0.135       # best
+All average forward run time: (0.112766) per frame[矩池云3090]
+# 在更好的模型做出来之前先用这个做定性对比图
+

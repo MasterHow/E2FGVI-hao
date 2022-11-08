@@ -51,11 +51,25 @@ def get_ref_index_mem(length, neighbor_ids, same_id=False):
             # 不允许相同的id，当出现相同id时找到最近的一个不同的i
             if i not in neighbor_ids:
                 ref_index.append(i)
-            else:   # TODO: 小于中位数的往前找，大于中位数的往后找
+            else:
+                lf_id_avg = sum(neighbor_ids)/len(neighbor_ids)     # 计算 local frame id 平均值
                 for _iter in range(0, 100):
                     if i < (length - 1):
                         # 不能超过视频长度
-                        i += 1
+                        if i == 0:
+                            # # 第0帧的时候重复，直接取到最后一个 LF + 2
+                            # i = neighbor_ids[-1] + 2
+                            # ref_index.append(i)
+                            # 第0帧的时候重复，直接取到下一个 NLF + 5   +5是为了防止和下一个重复的 nlf id 改的id重复
+                            i = ref_length + neighbor_stride
+                            ref_index.append(i)
+                            break
+                        elif i < lf_id_avg:
+                            # 往前找不重复的参考帧, 防止都往一个方向找而重复
+                            i -= 1
+                        else:
+                            # 往后找不重复的参考帧
+                            i += 1
                     else:
                         # 超过了直接用最后一帧，然后退出
                         ref_index.append(i)
@@ -238,9 +252,27 @@ def main_worker(args):
                                              min(video_length, f + neighbor_stride + 1))
                         ]  # neighbor_ids即为Local Frames, 局部帧
                         repeat_num = (neighbor_stride * 2 + 1) - len(neighbor_ids)
+
+                        # for ii in range(0, repeat_num):
+                        #     # 复制最后一帧
+                        #     neighbor_ids.append(neighbor_ids[-1])
+
+                        lf_id_avg = sum(neighbor_ids) / len(neighbor_ids)  # 计算 local frame id 平均值
+                        last_id = neighbor_ids[-1]
+                        first_id = neighbor_ids[0]
                         for ii in range(0, repeat_num):
-                            # 复制最后一帧
-                            neighbor_ids.append(neighbor_ids[-1])
+                            # 保证局部窗口的大小一致，防止缓存通道数变化
+                            if lf_id_avg < (video_length // 2):
+                                # # 前半段视频向后找局部id
+                                # new_id = last_id + 1 + ii
+                                # 前半段视频也向前找局部id，防止和下一个窗口的输入完全一样
+                                new_id = video_length - 1 - ii
+                            else:
+                                # 后半段视频向前找局部id
+                                new_id = first_id - 1 - ii
+                            neighbor_ids.append(new_id)
+
+                        neighbor_ids = sorted(neighbor_ids)    # 重新排序
 
                 else:
                     # 与记忆力模型的训练逻辑一致
@@ -270,6 +302,7 @@ def main_worker(args):
                 else:
                     ref_ids = get_ref_index_mem_random(neighbor_ids, video_length, num_ref_frame=3)  # 与序列训练同样的非局部帧输入逻辑
 
+                ref_ids = sorted(ref_ids)  # 重新排序
                 selected_imgs_lf = frames[:1, neighbor_ids, :, :, :]
                 selected_imgs_nlf = frames[:1, ref_ids, :, :, :]
                 selected_imgs = torch.cat((selected_imgs_lf, selected_imgs_nlf), dim=1)
@@ -333,20 +366,32 @@ def main_worker(args):
                     else:
                         if comp_frames[idx] is None:
                             # 如果第一次补全Local Frame中的某帧，直接记录到补全帧list (comp_frames) 里
-                            comp_frames[idx] = img
+                            # good_fusion下所有img多出一个‘次数’通道，用来记录所有的结果
+                            comp_frames[idx] = img[np.newaxis, :, :, :]
 
-                        elif idx == (neighbor_ids[0] + neighbor_ids[-1])/2:
-                            # 如果是中间帧，记录下来
-                            medium_frame = img
-                        elif (idx != 0) & (idx == neighbor_ids[0]):
-                            # 如果是第三次出现，加权平均
-                            comp_frames[idx] = comp_frames[idx].astype(
-                                np.float32) * 0.25 + medium_frame.astype(np.float32) * 0.5 + img.astype(np.float32) * 0.25
+                        # 针对默认滑窗的good fusion策略
+                        # elif idx == (neighbor_ids[0] + neighbor_ids[-1])/2:
+                        #     # 如果是中间帧，记录下来
+                        #     medium_frame = img
+                        # elif (idx != 0) & (idx == neighbor_ids[0]):
+                        #     # 如果是第三次出现，加权平均
+                        #     comp_frames[idx] = comp_frames[idx].astype(
+                        #         np.float32) * 0.25 + medium_frame.astype(np.float32) * 0.5 + img.astype(np.float32) * 0.25
+                        # else:
+                        #     # 如果是不是中间帧，权重为0.5
+                        #     comp_frames[idx] = comp_frames[idx].astype(
+                        #         np.float32) * 0.5 + img.astype(np.float32) * 0.5
+
+                        # 直接把所有结果都记录下来，最后沿着通道平均
                         else:
-                            # 如果是不是中间帧，权重为0.5
-                            comp_frames[idx] = comp_frames[idx].astype(
-                                np.float32) * 0.5 + img.astype(np.float32) * 0.5
+                            comp_frames[idx] = np.concatenate((comp_frames[idx], img[np.newaxis, :, :, :]), axis=0)
                         ########################################################################################
+
+        # 对于good_fusion, 推理一遍后需要沿着axis=0取平均
+        if args.good_fusion:
+            for idx, comp_frame in zip(range(0, video_length), comp_frames):
+                comp_frame = comp_frame.astype(np.float32).sum(axis=0)/comp_frame.shape[0]
+                comp_frames[idx] = comp_frame
 
         # 推理一遍后，额外的推理来刷记忆模型精度
         # TODO: 让这些额外推理与past_ref兼容

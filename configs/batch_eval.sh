@@ -24,9 +24,9 @@
 #done
 
 # Find Best FlowLens Youtube
-for i in `seq 337500 2500 365000`
+for i in `seq 377500 2500 385000`
 do
 #  echo $i
   echo gen_${i}.pth
-  CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_${i}.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
+  CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_${i}.pth --dataset davis --data_root datasets/ --timing --memory --same_memory --good_fusion
 done
