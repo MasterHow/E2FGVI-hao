@@ -1846,6 +1846,43 @@ All average forward run time: (0.050837) per frame[矩池云3090]
 没有找到全面更好的，扩大搜索范围
 搜索最佳模型[250k-395k]
 没有找到全面更好的，但是如果切换到这个模型，我选择325k
+[325k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 43.99/0.9992/0.004
+[325k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 37.03/0.9963/0.018
+[325k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.06/0.9793/0.058
+[Avg] 36.69 0.9916 0.027
+
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_early/gen_325000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov10 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84 --save_results --reverse
+序列测试+只使用之前的参考帧:
+CUDA_VISIBLE_DEVICES=1 python evaluate.py --model lite-MFN --ckpt release_model/lite-MFN_KITTI360EX-I_FlowLens_early/gen_325000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov20 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84 --save_results --reverse
+
+FlowLens+的结果还没替换KEXI
+[325k+, Inner Fov5] Finish evaluation... Average Frame PSNR/SSIM/VFID: 44.58/0.9993/0.003
+All average forward run time: (0.169987) per frame
+[325k+, Inner Fov10] Finish evaluation... Average Frame PSNR/SSIM/VFID: 37.72/0.9968/0.014
+All average forward run time: (0.168044) per frame
+[325k+, Inner Fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.83/0.9817/0.041
+All average forward run time: (0.165955) per frame
+[325k+, average] 37.38 0.9926 0.019
+
+测试E-warp
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens_early_KEXI_325k/lite-MFN_gen_325000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens_early_KEXI_325k/lite-MFN_gen_325000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+
+CUDA_VISIBLE_DEVICES=1 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_early_KEXI_325k/lite-MFN+_gen_325000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_early_KEXI_325k/lite-MFN+_gen_325000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+
+[325k, Inner Fov5]Average Warping Error = 0.003600
+[325k, Inner Fov10]Average Warping Error = 0.003627
+[325k, Inner Fov20]Average Warping Error = 0.003790
+[Avg] 0.003672
+
+[325k+, Inner Fov5]Average Warping Error = 0.003588
+[325k+, Inner Fov10]Average Warping Error = 0.003590
+[325k+, Inner Fov20]Average Warping Error = 0.003588
+[325k+, average] 0.003589
+
+
 
 
 # 基于early进行消融实验 使用Vanilla Attention替换3D Decoupled[已完成]
@@ -2021,7 +2058,8 @@ All average forward run time: (0.155860) per frame[矩池云3090]
 [405k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.07/0.9781/0.185[矩池云3090]
 [405k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 20.00/0.9427/0.282[矩池云3090]
 [405k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.32/0.8733/0.375[矩池云3090]
-[405k, Outer Avg.]
+[405k, Outer Avg.] 20.13 0.9314 0.281
+光流误差还没换掉
 
 [405k, Outer Fov5+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 23.51/0.9794/0.194
 All average forward run time: (0.155034) per frame[矩池云3090]
@@ -2029,8 +2067,25 @@ All average forward run time: (0.155034) per frame[矩池云3090]
 All average forward run time: (0.156658) per frame[矩池云3090]
 [405k, Outer Fov20+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.70/0.8733/0.409
 All average forward run time: (0.155976) per frame[矩池云3090]
-[405k, Outer Avg.+]
+[405k, Outer Avg.+] 20.5 0.9322 0.300
 看最后用哪个吧，要是用early那就这个了405k的
+光流误差还没换掉
+
+# 测试E-warp
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens_early_KEXO_405k/lite-MFN_gen_405000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens_early_KEXO_405k/lite-MFN_gen_405000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+
+CUDA_VISIBLE_DEVICES=1 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_early_KEXO_405k/lite-MFN+_gen_405000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens+_early_KEXO_405k/lite-MFN+_gen_405000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+[405k, Outer Fov5]  Average Warping Error = 0.004759
+[405k, Outer Fov10] Average Warping Error = 0.005175
+[405k, Outer Fov20] Average Warping Error = 0.006107
+[405k, Outer Avg.] 0.005347
+
+[405k, Outer Fov5+]  Average Warping Error = 0.003908
+[405k, Outer Fov10+] Average Warping Error = 0.003868
+[405k, Outer Fov20+] Average Warping Error = 0.003963
+[405k, Outer Avg.+] 0.003913
 
 推理的时候detach一下
 [405k, Outer Fov5][矩池云3090]
@@ -2112,7 +2167,42 @@ All average forward run time: (0.351661) per frame[矩池云3090]
 # 训练 FlowLens-S 在KITTI360-EXI上[3090Ti]进行中
 early，5层blk，隐藏层通道数减半，spynet并使用MaskFlowNetS监督; bs3 单卡训练 lr0.375 500k次
 python train.py -c configs/KITTI360EX-I_FlowLens_early_small_v2.json
+如果我的小模型使用随机mask监督，精度会怎么样呢？
+300k之前用的是 FoV mask, 300k之后使用 random mask，测试一下效果
 
+python evaluate.py --model lite-MFN --ckpt release_model/FlowLens-S-KEXI/gen_300000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//InnerSphere --fov fov10 --past_ref --timing --memory --output_size 336 336 --model_win_size 7 7 --model_output_size 84 84 --save_results
+
+[300k, Inner Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 42.71/0.9989/0.008
+All average forward run time: (0.024525) per frame
+[300k, Inner Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 36.56/0.9959/0.021
+All average forward run time: (0.024848) per frame
+[300k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.25/0.9800/0.062
+All average forward run time: (0.025323) per frame[矩池云3090]
+[Avg.] 36.17 0.9916 0.030
+
+[310k, Inner Fov5]
+[310k, Inner Fov10]
+[310k, Inner Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.23/0.9799/0.070
+All average forward run time: (0.025827) per frame[矩池云3090]
+用随机mask跑了10k好像没有什么区别。
+
+测试E_warp
+# 测试E-warp
+CUDA_VISIBLE_DEVICES=0 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens-S_early_KEXI_300k/lite-MFN_gen_300000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+CUDA_VISIBLE_DEVICES=0 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens-S_early_KEXI_300k/lite-MFN_gen_300000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp/
+
+CUDA_VISIBLE_DEVICES=1 python compute_flow_occlusion_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens-S_early_KEXO_250k/lite-MFN_gen_250000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+CUDA_VISIBLE_DEVICES=1 python evaluate_WarpError_my.py -list_dir /mnt/WORKSPACE/E2FGVI-hao/results/FlowLens-S_early_KEXO_250k/lite-MFN_gen_250000.pth_fov20_KITTI360-EX/ -flow_dir /mnt/WORKSPACE/E2FGVI-hao/results/Temp+/
+
+[300k, Inner Fov5]Average Warping Error = 0.003609
+[300k, Inner Fov10]Average Warping Error = 0.003644
+[300k, Inner Fov20]Average Warping Error = 0.003726
+[Avg.] 0.3660
+
+[250k, Outer Fov5]Average Warping Error = 0.004860
+[250k, Outer Fov10]Average Warping Error = 0.004990
+[250k, Outer Fov20]Average Warping Error = 0.005401
+[Avg.] 0.5084
 
 # 测试模型的FLOPs[矩池云3090]
 输入8张 432 240
@@ -2202,6 +2292,25 @@ FlowLens-early-DDCA
 # 训练 FlowLens-S 在KITTI360-EXO上[3090]进行中
 early，5层blk，隐藏层通道数减半，spynet并使用MaskFlowNetS监督; bs4 单卡训练 lr0.5 500k次
 python train.py -c configs/KITTI360EX-O_FlowLens_early_small_v2.json
+250k以后使用random mask而不是FoV mask进行训练
+
+python evaluate.py --model lite-MFN --ckpt release_model/FlowLens-S-KEXO/gen_255000.pth --dataset KITTI360-EX --data_root datasets//KITTI-360EX//OuterPinhole --fov fov5 --past_ref --timing --memory
+
+[250k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 22.35/0.9743/0.209
+All average forward run time: (0.023456) per frame[矩池云3090]
+[250k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 19.56/0.9365/0.295
+All average forward run time: (0.023394) per frame[矩池云3090]
+[250k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.13/0.8634/0.395
+All average forward run time: (0.023329) per frame[矩池云3090]
+[250k, Outer Avg.] 19.68 0.9247 0.300
+
+[255k, Outer Fov5]Finish evaluation... Average Frame PSNR/SSIM/VFID: 22.40/0.9741/0.258
+All average forward run time: (0.023735) per frame
+[255k, Outer Fov10]Finish evaluation... Average Frame PSNR/SSIM/VFID: 19.57/0.9340/0.362
+All average forward run time: (0.023311) per frame
+[255k, Outer Fov20]Finish evaluation... Average Frame PSNR/SSIM/VFID: 17.26/0.8600/0.490
+All average forward run time: (0.023483) per frame
+
 
 # 用MMCV重新测试FLOPs
 相对值的差没啥区别
@@ -2242,8 +2351,8 @@ python train.py -c configs/KITTI360EX-O_FlowLens_early_small_v2.json
 # 测试ubuntu微调的flowlens
 CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/Big_models/FlowLens_youtube_v2_ubuntu/gen_300000.pth --dataset davis --data_root E://Ubuntu-data// --timing --memory --same_memory
 
-CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_327500.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
-CUDA_VISIBLE_DEVICES=1 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_330000.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_342500.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
+CUDA_VISIBLE_DEVICES=1 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_340000.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
 
 
 E2FGVI 33.01 0.9721 0.116
@@ -2277,17 +2386,102 @@ All average forward run time: (0.117947) per frame[矩池云3090]
 [325k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.25/0.9684/0.131
 All average forward run time: (0.116518) per frame[矩池云3090]
 
-[327.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.35/0.9691/0.134                #best
+[327.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.35/0.9691/0.134
 All average forward run time: (0.113260) per frame
 
 [330k, davis] Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.28/0.9686/0.135
 All average forward run time: (0.116228) per frame
 
+[332.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.28/0.9685/0.135
+All average forward run time: (0.116179) per frame
+[335k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.41/0.9692/0.136
+All average forward run time: (0.119632) per frame
+
+# 以下弃用，从335k重新开始跑
+[337.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.17/0.9681/0.134
+All average forward run time: (0.116856) per frame
+[340k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.17/0.9685/0.140
+All average forward run time: (0.113907) per frame
+[342.5k, davis]Finish evaluation... Average Frame PSNR/SSIM/VFID: 31.55/0.9641/0.148
+All average forward run time: (0.115489) per frame
+
+# 从335k开始
+337.5k-365k精度测试
+等这个测完跑一下最好的那个节点的定性图 davis 和 youtube-vos
+[337.5k] 32.39/0.9690/0.133
+[340k]32.25/0.9680/0.133
+[342.5k]32.27/0.9685/0.128
+[345k]32.33/0.9691/0.137
+[347.5k]32.25/0.9686/0.139
+[350k]32.38/0.9688/0.138
+[352.5k]32.34/0.9689/0.131
+[355k]32.40/0.9689/0.133
+[357.5k]32.38/0.9692/0.131
+[360k]32.22/0.9682/0.132
+[362.5k]32.24/0.9683/0.135
+[365k]32.34/0.9688/0.131
+测试 367.5k-375k
+[367.5k]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.44/0.9692/0.137
+All average forward run time: (0.112052) per frame
+[370k]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.32/0.9688/0.134
+All average forward run time: (0.113268) per frame
+[372.5k]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.32/0.9692/0.134
+All average forward run time: (0.113100) per frame
+[375k]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.38/0.9691/0.133
+All average forward run time: (0.113600) per frame
+
+# 不允许相同 ref和local id输入了，测一下精度变化
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model lite-MFN --ckpt release_model/FlowLens_v2_ubuntu/gen_367500.pth --dataset davis --data_root datasets/ --timing --memory --same_memory
+以前的结果都是same id的，那自然是不如我
+[367.5k not same id]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.48/0.9694/0.137        #best
+All average forward run time: (0.113204) per frame
+
+# 还是会有重复的id，比如局部窗口有 40 和 50，那么参考帧就会取到两个51
+# 因此更改逻辑，当id重复时，前半部分往前找，后半部分重了往后找，以上面的例子，应该取到39和51
+[367.5k bi-drection id]
+
+# 为了保证记忆模型可以正常运算，当局部帧窗口小于11时，会直接复制最后一帧，这样当然不好
+# 因此进一步调整，当局部帧窗口小时，前半部分视频往后找不重复的帧，后半部分视频往前找不重复的帧
+[367.5k LF not same id]
+
+
+没有找到更好的，把 davis T 和 youtube 0.5 T 加入训练
 
 # 从342.5k开始Ubuntu FlowLens总是爆炸，因此冻结dcn
 还是会爆炸
 
 # 加载E2FGVI的预训练模型
+开了一个加载E2FGVI-HQ权重，其他权重随机初始化的实验
+从342.5k开始的，但是没加载FLowLens的预训练权重
+345k爆炸
+
+# 从335k开始微调
 
 
+# 跑一下E2FGVI，FuseFormer，STTN，CAP等模型在davis上的定性图
+E2FGVI
+默认的半滑窗逻辑测试：
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model e2fgvi --ckpt release_model/E2FGVI-CVPR22.pth --dataset davis --data_root datasets/ --timing --save_results
+[davis, E2FGVI]Finish evaluation... Average Frame PSNR/SSIM/VFID: 33.01/0.9721/0.116
+All average forward run time: (0.075422) per frame[矩池云3090]
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model e2fgvFi --ckpt release_model/E2FGVI-CVPR22.pth --dataset youtube-vos --data_root datasets/ --timing --save_results
+[youtube-vos, E2FGVI]Finish evaluation... Average Frame PSNR/SSIM/VFID: 33.71/0.9700/0.046
+All average forward run time: (0.109743) per frame[矩池云3090]
 
+FuseFormer
+默认的半滑窗逻辑测试：
+CUDA_VISIBLE_DEVICES=1 python evaluate.py --model fuseformer --ckpt release_model/fuseformer.pth --dataset davis --data_root datasets/ --timing --save_results
+[davis, FuseFormer]Finish evaluation... Average Frame PSNR/SSIM/VFID: 32.54/0.9700/0.138
+All average forward run time: (0.082081) per frame[矩池云3090]
+CUDA_VISIBLE_DEVICES=1 python evaluate.py --model fuseformer --ckpt release_model/fuseformer.pth --dataset youtube-vos --data_root datasets/ --timing --save_results
+[youtube-vos, FuseFormer]Finish evaluation... Average Frame PSNR/SSIM/VFID: 33.30/0.9681/0.053
+All average forward run time: (0.152525) per frame[矩池云3090]
+
+STTN
+默认的半滑窗逻辑测试：
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model sttn --ckpt release_model/sttn.pth --dataset davis --data_root datasets/ --timing --save_results --model_output_size 108 60
+[davis, STTN]Finish evaluation... Average Frame PSNR/SSIM/VFID: 30.61/0.9567/0.153
+All average forward run time: (0.042876) per frame[矩池云3090]
+CUDA_VISIBLE_DEVICES=0 python evaluate.py --model sttn --ckpt release_model/sttn.pth --dataset youtube-vos --data_root datasets/ --timing --save_results --model_output_size 108 60
+[youtube-vos, STTN]Finish evaluation... Average Frame PSNR/SSIM/VFID: 31.92/0.9598/0.060
+All average forward run time: (0.061929) per frame[矩池云3090]

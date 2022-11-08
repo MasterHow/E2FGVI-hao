@@ -39,10 +39,32 @@ def get_ref_index(neighbor_ids, length):
 
 # sample reference frames from the whole video with mem support
 # 允许相同的局部帧和非局部帧id，保证时间维度的一致性，但是引入了冗余计算？
-def get_ref_index_mem(length):
+# TODO:Dubug这里
+def get_ref_index_mem(length, neighbor_ids, same_id=False):
+    """smae_id(bool): If True, allow same ref and local id as input."""
     ref_index = []
     for i in range(0, length, ref_length):
-        ref_index.append(i)
+        if same_id:
+            # 允许相同id
+            ref_index.append(i)
+        else:
+            # 不允许相同的id，当出现相同id时找到最近的一个不同的i
+            if i not in neighbor_ids:
+                ref_index.append(i)
+            else:   # TODO: 小于中位数的往前找，大于中位数的往后找
+                for _iter in range(0, 100):
+                    if i < (length - 1):
+                        # 不能超过视频长度
+                        i += 1
+                    else:
+                        # 超过了直接用最后一帧，然后退出
+                        ref_index.append(i)
+                        break
+
+                    if i not in neighbor_ids:
+                        ref_index.append(i)
+                        break
+
     return ref_index
 
 
@@ -110,7 +132,10 @@ def main_worker(args):
         data = torch.load(args.ckpt, map_location=device)
         if (args.model == 'fuseformer') or (args.model == 'sttn'):
             # sttn和fuseformer的gen ckpt额外嵌套了一层netG
-            model.load_state_dict(data['netG'])
+            try:
+                model.load_state_dict(data['netG'])
+            except:
+                model.load_state_dict(data)
         else:
             model.load_state_dict(data)
         print(f'Loading from: {args.ckpt}')
@@ -239,7 +264,7 @@ def main_worker(args):
             else:
                 # 为了保证时间维度一致, 允许输入相同id的帧
                 if args.same_memory:
-                    ref_ids = get_ref_index_mem(video_length)  # ref_ids即为Non-Local Frames, 非局部帧
+                    ref_ids = get_ref_index_mem(video_length, neighbor_ids, same_id=args.same_id)  # ref_ids即为Non-Local Frames, 非局部帧
                 elif args.past_ref:
                     ref_ids = get_ref_index_mem_random(neighbor_ids, video_length, num_ref_frame=3, before_nlf=True)  # 只允许过去的参考帧
                 else:
@@ -376,7 +401,7 @@ def main_worker(args):
                 else:
                     # 为了保证时间维度一致, 允许输入相同id的帧
                     if args.same_memory:
-                        ref_ids = get_ref_index_mem(video_length)  # ref_ids即为Non-Local Frames, 非局部帧
+                        ref_ids = get_ref_index_mem(video_length, neighbor_ids, same_id=args.same_id)  # ref_ids即为Non-Local Frames, 非局部帧
                     else:
                         ref_ids = get_ref_index_mem_random(neighbor_ids, video_length, num_ref_frame=3)  # 与序列训练同样的非局部帧输入逻辑
 
@@ -599,6 +624,8 @@ if __name__ == '__main__':
     parser.add_argument('--memory', action='store_true', default=False, help='test with memory ability')
     parser.add_argument('--same_memory', action='store_true', default=False,
                         help='test with memory ability in E2FGVI style, not work with --memory_double')
+    parser.add_argument('--same_id', action='store_true', default=False,
+                        help='if True, allow same ref id and local id input for memory models.')
     # TODO: 这里的memory double逻辑还可以把前面两帧也再次估计一遍提升精度
     parser.add_argument('--memory_double', action='store_true', default=False, help='test with memory ability twice')
     parser.add_argument('--memory_fifth', action='store_true', default=False, help='test with memory ability five times')
