@@ -193,7 +193,10 @@ def main_worker(args):
         else:
             result_path = os.path.join('results', f'{args.model}_{ckpt}_{args.fov}_{args.dataset}')
     else:
-        result_path = os.path.join('results', f'{args.model}_{ckpt}_{args.dataset}')
+        if args.reverse:
+            result_path = os.path.join('results', f'{args.model}+_{ckpt}_{args.dataset}')
+        else:
+            result_path = os.path.join('results', f'{args.model}_{ckpt}_{args.dataset}')
     if not os.path.exists(result_path):
         os.makedirs(result_path)
     eval_summary = open(
