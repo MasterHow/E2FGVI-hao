@@ -461,6 +461,11 @@ class TestDataset(torch.utils.data.Dataset):
     def __init__(self, args):
         self.args = args
         self.size = self.w, self.h = args.size
+        try:
+            # 是否使用 object mask
+            self.object_mask = args.object
+        except:
+            self.object_mask = False
 
         if args.dataset != 'KITTI360-EX':
             # default manner
@@ -510,10 +515,16 @@ class TestDataset(torch.utils.data.Dataset):
 
             # read mask from folder
             if self.args.dataset != 'KITTI360-EX':
-                # default manner
-                mask_path = os.path.join(self.args.data_root, self.args.dataset,
-                                         'test_masks', video_name,
-                                         str(idx).zfill(5) + '.png')
+                if not self.object_mask:
+                    # default manner for video completion
+                    mask_path = os.path.join(self.args.data_root, self.args.dataset,
+                                             'test_masks', video_name,
+                                             str(idx).zfill(5) + '.png')
+                else:
+                    # default manner for object removal
+                    mask_path = os.path.join(self.args.data_root, self.args.dataset,
+                                             'test_masks_object', video_name,
+                                             str(idx).zfill(5) + '.png')
             else:
                 # for KITTI360-EX: use seq 10 for testing
                 mask_path = os.path.join(self.args.data_root, 'test_masks', 'seq10', self.args.fov, video_name,

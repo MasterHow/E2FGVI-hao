@@ -657,6 +657,7 @@ if __name__ == '__main__':
                         type=str)       # 相当于train的‘name’
     parser.add_argument('--data_root', type=str, required=True)
     parser.add_argument('--output_size', type=int, nargs='+', default=[432, 240])
+    parser.add_argument('--object', action='store_true', default=False)     # if true, use object removal mask
     parser.add_argument('--fov',
                         choices=['fov5', 'fov10', 'fov20'],
                         type=str)  # 对于KITTI360-EX, 测试需要输入fov
