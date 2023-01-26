@@ -2972,3 +2972,12 @@ All average forward run time: (0.135260) per frame
 [653, davis+]Finish evaluation... Average Frame PSNR/SSIM/VFID: 33.57/0.9751/0.122
 All average forward run time: (0.420654) per frame
 [653, youtube-vos]
+
+#######################Rebuttal########################
+
+/workspace/mnt/storage/shihao/shihao-cephs/E2FGVI-hao/train_ddp01.sh
+
+## 局部窗口大小消融实验
+# VI-DDP01 KITTI360EX-I_FlowLens_ablation_window_3
+# VI-DDP-A100 KITTI360EX-I_FlowLens_ablation_window_7
+# VI-DDP-A100-02 KITTI360EX-I_FlowLens_ablation_window_9

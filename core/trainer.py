@@ -844,20 +844,25 @@ class Trainer:
                 if start_idx == 0:
                     if self.config['world_size'] == 1:
                         # 单卡清除记忆缓存
-                        for blk in self.netG.transformer:
+                        for blk_idx in range(0, len(self.netG.transformer)):
                             try:
                                 # 清空有记忆力的层的记忆缓存
-                                blk.attn.m_k = []
-                                blk.attn.m_v = []
+                                # blk.attn.m_k = []
+                                # blk.attn.m_v = []
+                                self.netG.transformer[blk_idx].attn.m_k = []
+                                self.netG.transformer[blk_idx].attn.m_v = []
                             except:
                                 pass
                     else:
                         # 多卡清除记忆缓存
-                        for blk in self.netG.module.transformer:
+                        for blk_idx in range(0, len(self.netG.module.transformer)):
                             try:
-                                # 清空有记忆力的层的记忆缓存
-                                blk.attn.m_k = []
-                                blk.attn.m_v = []
+                                # 清空有记忆力的层的记忆缓存 原版这里有bug没有清除缓存
+                                # blk.attn.m_k = []
+                                # blk.attn.m_v = []
+                                # TODO: 检查这里的清除代码有没有work
+                                self.netG.module.transformer[blk_idx].attn.m_k = []
+                                self.netG.module.transformer[blk_idx].attn.m_v = []
                             except:
                                 pass
 

@@ -160,7 +160,8 @@ class TrainDataset_Mem(torch.utils.data.Dataset):
             ToTorchFormatTensor(),
         ])
 
-        self.neighbor_stride = 5    # 每隔5步采样一组LF和NLF
+        # self.neighbor_stride = 5    # 每隔5步采样一组LF和NLF 这里可能是个采样bug
+        self.neighbor_stride = self.num_local_frames    # 每隔window size步采样一组LF和NLF
         self.start_index = 0        # 采样的起始点
         self.start = start          # 数据集迭代起点
         self.end = len(self.video_names)              # 数据集迭代终点
