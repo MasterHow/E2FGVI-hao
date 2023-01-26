@@ -2981,3 +2981,14 @@ All average forward run time: (0.420654) per frame
 # VI-DDP01 KITTI360EX-I_FlowLens_ablation_window_3
 # VI-DDP-A100 KITTI360EX-I_FlowLens_ablation_window_7
 # VI-DDP-A100-02 KITTI360EX-I_FlowLens_ablation_window_9
+
+## strip pooling消融实验
+# VI-DDP02 KITTI360EX-I_FlowLens_ablation_wo_strip_pool
+
+## clip recurrent hub消融实验
+# VI-DDP03 KITTI360EX-I_FlowLens_ablation_wo_hub
+# VI-DDP04 KITTI360EX-I_FlowLens_ablation_mem_len_2
+# VI-DDP05 KITTI360EX-I_FlowLens_ablation_mem_len_4
+
+## DDCA vs Axial
+# VI-DDP06 KITTI360EX-I_FlowLens_ablation_axial_att

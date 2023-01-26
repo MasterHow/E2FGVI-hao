@@ -2206,6 +2206,7 @@ class WindowAttentionMem(nn.Module):
                             # 各种不同的cross attention选择
                             if not self.time_att:
                                 # 信息只在Nh Nw维度流动(空间维度)
+                                # 不做时间att目前只实现了vanilla
                                 q = q.reshape(B * T, self.num_heads, nH * nW, C // self.num_heads).contiguous()
                                 mem_k = mem_k.reshape(B * T, self.num_heads, nH * nW, C // self.num_heads).contiguous()
                                 mem_v = mem_v.reshape(B * T, self.num_heads, nH * nW, C // self.num_heads).contiguous()

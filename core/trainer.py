@@ -256,6 +256,24 @@ class Trainer:
                 else:
                     self.cs_focal = False
                     self.cs_focal_v2 = False
+            else:
+                self.mem_pool = False
+                self.store_lf = False
+                self.align_cache = False
+                self.sub_token_align = False
+                self.sub_factor = 1
+                self.early_memory = False
+                self.half_memory = False
+                self.last_memory = False
+                self.middle_memory = False
+                self.cross_att = False
+                self.time_att = False
+                self.time_deco = False
+                self.temp_focal = False
+                self.cs_win = False
+                self.mem_att = False
+                self.cs_focal = False
+                self.cs_focal_v2 = False
 
             # 是否使用3D deco focav2 cswin替换temporal focal trans主干
             if config['model']['cs_trans'] != 0:
