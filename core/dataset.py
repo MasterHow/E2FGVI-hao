@@ -131,9 +131,11 @@ class TrainDataset_Mem(torch.utils.data.Dataset):
         self.size = self.w, self.h = (args['w'], args['h'])
 
         # 是否为KITTI360使用随机mask
+        args['random_mask'] = args.get('random_mask', 0)
         if args['random_mask'] != 0:
             self.random_mask = True
         else:
+            # default
             self.random_mask = False
 
         if args['name'] != 'KITTI360-EX':

@@ -77,13 +77,18 @@ class Trainer:
         if config['model']['net'] == 'lite-MFN' or config['model']['net'] == 'large-MFN':
 
             # 是否使用spynet作为光流补全网络，目前仅用于消融实验
+            config['model']['spy_net'] = config['model'].get('spy_net', 0)
             if config['model']['spy_net'] != 0:
+                # default for FlowLens-S
                 self.spy_net = True
             else:
+                # default for FlowLens
                 self.spy_net = False
 
             # 是否使用maskflownet-s作为教师 光流补全网络，目前仅用于消融实验，仅对于SpyNet网络生效，因为不会用烂的监督好的
+            config['model']['mfn_teach'] = config['model'].get('mfn_teach', 1)
             if config['model']['mfn_teach'] != 0:
+                # default
                 self.mfn_teach = True
             else:
                 self.mfn_teach = False
@@ -111,9 +116,11 @@ class Trainer:
         if config['model']['net'] == 'lite-MFN' or config['model']['net'] == 'large-MFN':
 
             # 加载E2FGVI-HQ的预训练权重
+            config['model']['load_e2fgvi'] = config['model'].get('load_e2fgvi', 0)
             if config['model']['load_e2fgvi'] != 0:
                 self.load_e2fgvi = True
             else:
+                # default
                 self.load_e2fgvi = False
 
             if config['model']['skip_dcn'] != 0:
@@ -188,9 +195,11 @@ class Trainer:
                     self.early_memory = False
 
                 # 是否只有中间blk装备记忆力
+                config['model']['middle_memory'] = config['model'].get('middle_memory', 0)
                 if config['model']['middle_memory'] != 0:
                     self.middle_memory = True
                 else:
+                    # default
                     self.middle_memory = False
 
                 # 是否使用cross attention融合记忆与当前特征(在Nh Nw维度流动信息)
@@ -261,15 +270,19 @@ class Trainer:
                 self.mix_f3n = False
 
             # 是否使用FFN代替F3N，仅用于消融实验
+            config['model']['ffn'] = config['model'].get('ffn', 0)
             if config['model']['ffn'] != 0:
                 self.ffn = True
             else:
+                # default
                 self.ffn = False
 
             # 是否使用MixFFN代替F3N，仅用于消融实验，来自于SegFormer
+            config['model']['mix_ffn'] = config['model'].get('mix_ffn', 0)
             if config['model']['mix_ffn'] != 0:
                 self.mix_ffn = True
             else:
+                # default
                 self.mix_ffn = False
 
             # 定义transformer的深度
@@ -321,9 +334,11 @@ class Trainer:
                 self.small_model = False
 
             # 是否冻结dcn参数
+            config['model']['freeze_dcn'] = config['model'].get('freeze_dcn', 0)
             if config['model']['freeze_dcn'] != 0:
                 self.freeze_dcn = True
             else:
+                # default
                 self.freeze_dcn = False
 
             if self.cs_trans:

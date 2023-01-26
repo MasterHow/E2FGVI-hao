@@ -24,7 +24,7 @@
 #done
 
 # Find Best FlowLens Youtube
-for i in `seq 377500 2500 385000`
+for i in `seq 370000 2500 377500`
 do
 #  echo $i
   echo gen_${i}.pth
