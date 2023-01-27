@@ -136,7 +136,7 @@ class deconv(nn.Module):
 
 class InpaintGenerator(BaseNetwork):
     def __init__(self, init_weights=True, flow_align=True, skip_dcn=False, freeze_dcn=False, spy_net=False,
-                 flow_guide=False,
+                 flow_guide=False, flow_res=0.25,
                  token_fusion=False, token_fusion_simple=False, fusion_skip_connect=False,
                  memory=True, max_mem_len=1, compression_factor=1, mem_pool=False, store_lf=False, align_cache=False,
                  sub_token_align=False, sub_factor=1, half_memory=False, last_memory=False, early_memory=True,
@@ -224,7 +224,9 @@ class InpaintGenerator(BaseNetwork):
 
         # 光流引导特征嵌入
         self.flow_guide = flow_guide
-        # token空间缩减
+        # 光流推理分辨率
+        self.flow_res = flow_res
+        # token空间缩减 (SiT, Dynamic ViT)
         self.token_fusion = token_fusion
         # 共用token空间缩减和扩展模块
         self.token_fusion_simple = token_fusion_simple
@@ -266,6 +268,7 @@ class InpaintGenerator(BaseNetwork):
         output_size = output_size                   # 输出的尺寸，训练尺寸//4
         spy_net = spy_net                           # 如果为True，使用spynet替换maskflownets计算光流
         freeze_dcn = freeze_dcn                     # 如果为True，冻结dcn参数
+        flow_res = flow_res                         # 在哪个分辨率上推理光流
 
         # encoder
         # self.encoder = Encoder()    # default
@@ -987,27 +990,43 @@ class InpaintGenerator(BaseNetwork):
 
     def forward_bidirect_flow(self, masked_local_frames):
         b, l_t, c, h, w = masked_local_frames.size()
+        scale_factor = int(1 / self.flow_res)   # 1/4 -> 4 用来恢复尺度
 
         # compute forward and backward flows of masked frames
         masked_local_frames = F.interpolate(masked_local_frames.view(
             -1, c, h, w),
-                                            scale_factor=1 / 4,
+                                            scale_factor=self.flow_res,     # 1/4 for default
                                             mode='bilinear',
                                             align_corners=True,
                                             recompute_scale_factor=True)
-        masked_local_frames = masked_local_frames.view(b, l_t, c, h // 4,
-                                                       w // 4)
+        masked_local_frames = masked_local_frames.view(b, l_t, c, h // scale_factor,
+                                                       w // scale_factor)
         mlf_1 = masked_local_frames[:, :-1, :, :, :].reshape(
-            -1, c, h // 4, w // 4)
+            -1, c, h // scale_factor, w // scale_factor)
         mlf_2 = masked_local_frames[:, 1:, :, :, :].reshape(
-            -1, c, h // 4, w // 4)
+            -1, c, h // scale_factor, w // scale_factor)
         pred_flows_forward = self.update_MFN(mlf_1, mlf_2)
         pred_flows_backward = self.update_MFN(mlf_2, mlf_1)
 
-        pred_flows_forward = pred_flows_forward.view(b, l_t - 1, 2, h // 4,
+        pred_flows_forward = pred_flows_forward.view(b, l_t - 1, 2, h // scale_factor,
+                                                     w // scale_factor)
+        pred_flows_backward = pred_flows_backward.view(b, l_t - 1, 2, h // scale_factor,
+                                                       w // scale_factor)
+
+        # 最后必须resize到1/4来做feature warping
+        if scale_factor != 4:
+            pred_flows_forward = F.interpolate(pred_flows_forward.view(-1, 2, h // scale_factor, w // scale_factor),
+                                            scale_factor=scale_factor / 4,
+                                            mode='bilinear',
+                                            align_corners=True,
+                                            recompute_scale_factor=True).view(b, l_t - 1, 2, h // 4,
                                                      w // 4)
-        pred_flows_backward = pred_flows_backward.view(b, l_t - 1, 2, h // 4,
-                                                       w // 4)
+            pred_flows_backward = F.interpolate(pred_flows_backward.view(-1, 2, h // scale_factor, w // scale_factor),
+                                               scale_factor=scale_factor / 4,
+                                               mode='bilinear',
+                                               align_corners=True,
+                                               recompute_scale_factor=True).view(b, l_t - 1, 2, h // 4,
+                                                                                 w // 4)
 
         return pred_flows_forward, pred_flows_backward
 

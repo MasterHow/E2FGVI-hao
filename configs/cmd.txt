@@ -2992,3 +2992,8 @@ All average forward run time: (0.420654) per frame
 
 ## DDCA vs Axial
 # VI-DDP06 KITTI360EX-I_FlowLens_ablation_axial_att
+
+## Flow Resolution
+# VI-DDP07 KITTI360EX-I_FlowLens_ablation_flow_res_1
+# VI-DDP08 KITTI360EX-I_FlowLens_ablation_flow_res_0.5
+# VI-DDP09 KITTI360EX-I_FlowLens_ablation_flow_res_0.125

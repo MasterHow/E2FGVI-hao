@@ -93,17 +93,21 @@ class Trainer:
             else:
                 self.mfn_teach = False
 
+            self.flow_res = config['model'].get('flow_res', 0.25)  # 默认在1/4分辨率计算光流
+
             # 用哪个网络计算loss
             if self.spy_net:
                 if not self.mfn_teach:
                     # spy net
-                    self.flow_comp_loss = FlowCompletionLoss(estimator='spy').to(self.config['device'])  # default
+                    self.flow_comp_loss = FlowCompletionLoss(estimator='spy', flow_res=self.flow_res).to(self.config['device'])  # default
                 else:
                     # mask flow net s 监督 spynet
-                    self.flow_comp_loss = FlowCompletionLoss(estimator='mfn', device=self.config['device']).to(self.config['device'])
+                    self.flow_comp_loss = \
+                        FlowCompletionLoss(estimator='mfn', device=self.config['device'], flow_res=self.flow_res).to(self.config['device'])
             else:
                 # mask flow net s 监督 mask flow net s
-                self.flow_comp_loss = FlowCompletionLoss(estimator='mfn', device=self.config['device']).to(self.config['device'])
+                self.flow_comp_loss = \
+                    FlowCompletionLoss(estimator='mfn', device=self.config['device'], flow_res=self.flow_res).to(self.config['device'])
 
         # setup models including generator and discriminator
         net = importlib.import_module('model.' + config['model']['net'])
@@ -401,7 +405,8 @@ class Trainer:
                 # 使用cs主干
                 self.netG = net.InpaintGenerator(
                     skip_dcn=self.skip_dcn, freeze_dcn=self.freeze_dcn,
-                    spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
+                    spy_net=self.spy_net, flow_guide=self.flow_guide, flow_res=self.flow_res,
+                    token_fusion=self.token_fusion,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
@@ -420,7 +425,8 @@ class Trainer:
                 # 使用tf主干
                 self.netG = net.InpaintGenerator(
                     skip_dcn=self.skip_dcn, freeze_dcn=self.freeze_dcn,
-                    spy_net=self.spy_net, flow_guide=self.flow_guide, token_fusion=self.token_fusion,
+                    spy_net=self.spy_net, flow_guide=self.flow_guide, flow_res=self.flow_res,
+                    token_fusion=self.token_fusion,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,

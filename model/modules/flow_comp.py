@@ -11,7 +11,7 @@ from model.modules.flow_comp_MFN import MaskFlowNetS
 
 class FlowCompletionLoss(nn.Module):
     """Flow completion loss"""
-    def __init__(self, estimator='spy', device='cuda:0'):
+    def __init__(self, estimator='spy', device='cuda:0', flow_res=0.25):
         super().__init__()
         if estimator == 'spy':
             # default flow compute with spynet:
@@ -28,23 +28,41 @@ class FlowCompletionLoss(nn.Module):
 
         self.l1_criterion = nn.L1Loss()
 
+        self.flow_res = flow_res    # 在哪个分辨率计算光流
+
     def forward(self, pred_flows, gt_local_frames):
         b, l_t, c, h, w = gt_local_frames.size()
+        scale_factor = int(1 / self.flow_res)  # 1/4 -> 4 用来恢复尺度
 
         with torch.no_grad():
             # compute gt forward and backward flows
             gt_local_frames = F.interpolate(gt_local_frames.view(-1, c, h, w),
-                                            scale_factor=1 / 4,
+                                            scale_factor=self.flow_res,
                                             mode='bilinear',
                                             align_corners=True,
                                             recompute_scale_factor=True)
-            gt_local_frames = gt_local_frames.view(b, l_t, c, h // 4, w // 4)
+            gt_local_frames = gt_local_frames.view(b, l_t, c, h // scale_factor, w // scale_factor)
             gtlf_1 = gt_local_frames[:, :-1, :, :, :].reshape(
-                -1, c, h // 4, w // 4)
+                -1, c, h // scale_factor, w // scale_factor)
             gtlf_2 = gt_local_frames[:, 1:, :, :, :].reshape(
-                -1, c, h // 4, w // 4)
+                -1, c, h // scale_factor, w // scale_factor)
             gt_flows_forward = self.fix_spynet(gtlf_1, gtlf_2)
             gt_flows_backward = self.fix_spynet(gtlf_2, gtlf_1)
+
+            # 最后必须resize到1/4来做feature warping的flow的监督
+            if scale_factor != 4:
+                gt_flows_forward = F.interpolate(gt_flows_forward.view(-1, 2, h // scale_factor, w // scale_factor),
+                                                   scale_factor=scale_factor / 4,
+                                                   mode='bilinear',
+                                                   align_corners=True,
+                                                   recompute_scale_factor=True).view(b, l_t - 1, 2, h // 4,
+                                                                                     w // 4)
+                gt_flows_backward = F.interpolate(gt_flows_backward.view(-1, 2, h // scale_factor, w // scale_factor),
+                                                    scale_factor=scale_factor / 4,
+                                                    mode='bilinear',
+                                                    align_corners=True,
+                                                    recompute_scale_factor=True).view(b, l_t - 1, 2, h // 4,
+                                                                                      w // 4)
 
         # calculate loss for flow completion
         forward_flow_loss = self.l1_criterion(
