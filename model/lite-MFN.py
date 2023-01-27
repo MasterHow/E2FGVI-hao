@@ -137,7 +137,7 @@ class deconv(nn.Module):
 class InpaintGenerator(BaseNetwork):
     def __init__(self, init_weights=True, flow_align=True, skip_dcn=False, freeze_dcn=False, spy_net=False,
                  flow_guide=False, flow_res=0.25,
-                 token_fusion=False, token_fusion_simple=False, fusion_skip_connect=False,
+                 token_fusion=False, token_fusion_simple=False, fusion_skip_connect=False, fusion_recurrent=False,
                  memory=True, max_mem_len=1, compression_factor=1, mem_pool=False, store_lf=False, align_cache=False,
                  sub_token_align=False, sub_factor=1, half_memory=False, last_memory=False, early_memory=True,
                  middle_memory=False,
@@ -234,6 +234,8 @@ class InpaintGenerator(BaseNetwork):
         self.fusion_skip_connect = fusion_skip_connect
         # 引入Memory机制存储上次的补全feat
         self.memory = memory
+        # 是否循环补全的feat
+        self.fusion_recurrent = fusion_recurrent
 
         # if self.memory:
         max_mem_len = max_mem_len                   # 记忆的最长存储时间，以forward次数为单位
@@ -443,7 +445,8 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_win_strip=1,
                                                               mix_f3n=mix_f3n,
                                                               ffn=ffn,
-                                                              mix_ffn=mix_ffn), )
+                                                              mix_ffn=mix_ffn,
+                                                              fusion_recurrent=fusion_recurrent), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -561,7 +564,8 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_win_strip=1,
                                                               mix_f3n=mix_f3n,
                                                               ffn=ffn,
-                                                              mix_ffn=mix_ffn), )
+                                                              mix_ffn=mix_ffn,
+                                                              fusion_recurrent=fusion_recurrent), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -680,7 +684,8 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_win_strip=1,
                                                               mix_f3n=mix_f3n,
                                                               ffn=ffn,
-                                                              mix_ffn=mix_ffn), )
+                                                              mix_ffn=mix_ffn,
+                                                              fusion_recurrent=fusion_recurrent), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -799,7 +804,8 @@ class InpaintGenerator(BaseNetwork):
                                                               cs_win_strip=1,
                                                               mix_f3n=mix_f3n,
                                                               ffn=ffn,
-                                                              mix_ffn=mix_ffn), )
+                                                              mix_ffn=mix_ffn,
+                                                              fusion_recurrent=fusion_recurrent), )
                         else:
                             # 使用cs win主干
                             blocks.append(
@@ -917,7 +923,8 @@ class InpaintGenerator(BaseNetwork):
                                                           cs_win_strip=1,
                                                           mix_f3n=mix_f3n,
                                                           ffn=ffn,
-                                                          mix_ffn=mix_ffn), )
+                                                          mix_ffn=mix_ffn,
+                                                          fusion_recurrent=fusion_recurrent), )
                     else:
                         # 使用cs win主干
                         blocks.append(

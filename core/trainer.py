@@ -119,6 +119,13 @@ class Trainer:
 
         if config['model']['net'] == 'lite-MFN' or config['model']['net'] == 'large-MFN':
 
+            config['model']['fusion_recurrent'] = config['model'].get('fusion_recurrent', 0)  # 默认不循环融合特征
+            if config['model']['fusion_recurrent'] != 0:
+                self.fusion_recurrent = True
+            else:
+                # default manner
+                self.fusion_recurrent = False
+
             # 加载E2FGVI-HQ的预训练权重
             config['model']['load_e2fgvi'] = config['model'].get('load_e2fgvi', 0)
             if config['model']['load_e2fgvi'] != 0:
@@ -406,7 +413,7 @@ class Trainer:
                 self.netG = net.InpaintGenerator(
                     skip_dcn=self.skip_dcn, freeze_dcn=self.freeze_dcn,
                     spy_net=self.spy_net, flow_guide=self.flow_guide, flow_res=self.flow_res,
-                    token_fusion=self.token_fusion,
+                    token_fusion=self.token_fusion, fusion_recurrent=self.fusion_recurrent,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
@@ -426,7 +433,7 @@ class Trainer:
                 self.netG = net.InpaintGenerator(
                     skip_dcn=self.skip_dcn, freeze_dcn=self.freeze_dcn,
                     spy_net=self.spy_net, flow_guide=self.flow_guide, flow_res=self.flow_res,
-                    token_fusion=self.token_fusion,
+                    token_fusion=self.token_fusion, fusion_recurrent=self.fusion_recurrent,
                     token_fusion_simple=self.token_fusion_simple, fusion_skip_connect=self.fusion_skip_connect,
                     memory=self.memory, max_mem_len=config['model']['max_mem_len'],
                     compression_factor=config['model']['compression_factor'], mem_pool=self.mem_pool,
@@ -884,7 +891,6 @@ class Trainer:
                                 # 清空有记忆力的层的记忆缓存 原版这里有bug没有清除缓存
                                 # blk.attn.m_k = []
                                 # blk.attn.m_v = []
-                                # TODO: 检查这里的清除代码有没有work
                                 self.netG.module.transformer[blk_idx].attn.m_k = []
                                 self.netG.module.transformer[blk_idx].attn.m_v = []
                             except:

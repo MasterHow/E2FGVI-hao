@@ -1850,7 +1850,8 @@ class WindowAttentionMem(nn.Module):
     def __init__(self, dim, expand_size, window_size, focal_window,
                  focal_level, num_heads, qkv_bias, pool_method,
                  memory, max_mem_len, compression_factor, mem_pool, store_lf, align_cache, sub_token_align, sub_factor,
-                 cross_att, time_att, time_deco, temp_focal, cs_win, mem_att, cs_focal, cs_focal_v2, cs_win_strip):
+                 cross_att, time_att, time_deco, temp_focal, cs_win, mem_att, cs_focal, cs_focal_v2, cs_win_strip,
+                 fusion_recurrent=False):
 
         super().__init__()
         self.dim = dim
@@ -1875,7 +1876,9 @@ class WindowAttentionMem(nn.Module):
         self.cs_win = cs_win
         self.mem_att = mem_att
         self.cs_focal = cs_focal
-        self.cs_focal_v2 = cs_focal_v2
+        self.cs_focal_v2 = cs_focal_v2  # strip pooling
+
+        self.fusion_recurrent = fusion_recurrent
 
         if any(i > 0 for i in self.expand_size) and focal_level > 0:
             # get mask for rolled k and rolled v
@@ -2797,12 +2800,30 @@ class WindowAttentionMem(nn.Module):
             # 缓存当前时刻还没被压缩过的记忆张量，会在下一个时刻被压缩
             if not self.store_lf:
                 # 局部帧和非局部帧都会被缓存
-                self.m_k.append(k_temp.detach())    # debug
-                self.m_v.append(v.detach())
+                if self.fusion_recurrent:
+                    # 使用融合后的特征再次提取qkv进入到缓存中
+                    qkv_new = self.qkv(x).reshape(B, T, nH, nW, 3, C).permute(4, 0, 1, 2, 3, 5).contiguous()
+                    k_new, v_new = qkv_new[1], qkv_new[2]  # B, T, nH, nW, C
+                    self.m_k.append(k_new.detach())
+                    self.m_v.append(v_new.detach())
+                else:
+                    # 直接缓存当前的kv
+                    self.m_k.append(k_temp.detach())  # debug
+                    self.m_v.append(v.detach())
             else:
                 # 只缓存局部帧
-                self.m_k.append(k_lf.detach())
-                self.m_v.append(v_lf.detach())
+                if self.fusion_recurrent:
+                    # 使用融合后的特征再次提取qkv进入到缓存中
+                    qkv_new = self.qkv(x).reshape(B, T, nH, nW, 3, C).permute(4, 0, 1, 2, 3, 5).contiguous()
+                    k_new, v_new = qkv_new[1], qkv_new[2]  # B, T, nH, nW, C
+                    k_new_lf = k_new[:, :l_t, ...]
+                    v_new_lf = v_new[:, :l_t, ...]
+                    self.m_k.append(k_new_lf.detach())
+                    self.m_v.append(v_new_lf.detach())
+                else:
+                    # 直接缓存当前的局部帧kv
+                    self.m_k.append(k_lf.detach())
+                    self.m_v.append(v_lf.detach())
 
             # 保持记忆力的最大长度
             if len(self.m_k) > self.max_len:
@@ -2856,6 +2877,7 @@ class TemporalFocalTransformerBlock(nn.Module):
         mix_f3n (bool): If True, enhance f3n with mix_f3n.
         ffn (bool): If True, use ffn to replace f3n. only for ablation.
         mix_ffn (bool): If True, use mix_ffn form segformer to replace f3n. only for ablation.
+        fusion_recurrent (bool): If True, cache new qkv from fusion x instead of current kv.
     """
     def __init__(self,
                  dim,
@@ -2889,7 +2911,8 @@ class TemporalFocalTransformerBlock(nn.Module):
                  cs_win_strip=1,
                  mix_f3n=False,
                  ffn=False,
-                 mix_ffn=False):
+                 mix_ffn=False,
+                 fusion_recurrent=False):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
@@ -2954,7 +2977,8 @@ class TemporalFocalTransformerBlock(nn.Module):
                                            mem_att=mem_att,
                                            cs_focal=cs_focal,
                                            cs_focal_v2=cs_focal_v2,
-                                           cs_win_strip=cs_win_strip)
+                                           cs_win_strip=cs_win_strip,
+                                           fusion_recurrent=fusion_recurrent)
 
         self.norm2 = norm_layer(dim)
         self.mix_f3n = mix_f3n
