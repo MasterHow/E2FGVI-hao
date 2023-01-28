@@ -83,6 +83,9 @@ http://127.0.0.1:8008/
 
 # 批量清理显卡进程
 fuser -v /dev/nvidia* |awk '{for(i=1;i<=NF;i++)print "kill -9 " $i;}' | sh
+
+# evaluate.py依赖项
+pip install scikit-image
 ####################################################
 
 # 训练e2fgvi-bs2-250k [已完成]
@@ -3000,3 +3003,19 @@ All average forward run time: (0.420654) per frame
 
 ## 循环融合特征
 # VI-DDP10 KITTI360EX-I_FlowLens_ablation_fusion_recurrent
+
+# 重构 evaluate.py 以FlowLens-S测试
+[same memory, fov5] Finish evaluation... Average Frame PSNR/SSIM/VFID: 43.43/0.9991/0.005
+[same memory, fov10] Finish evaluation... Average Frame PSNR/SSIM/VFID: 37.41/0.9966/0.015
+[same memory, fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 30.36/0.9840/0.048 --All average forward run time: (0.061496) per frame
+[same memory] 37.07 0.9932 0.23
+[memory] Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.25/0.9800/0.062 --All average forward run time: (0.022553) per frame
+结果和此前一致
+
+## 测试推理window和stride对于结果的影响
+N=8
+# E2FGVI
+[offline future sample, fov5]
+[offline future sample, fov10]
+[offline future sample, fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.41/0.9800/0.043 --All average forward run time: (0.097620) per frame
+[offline future sample]

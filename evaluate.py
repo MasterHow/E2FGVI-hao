@@ -5,9 +5,10 @@ import importlib
 import sys
 import os
 import time
+import json
 import random
 import argparse
-import line_profiler
+# import line_profiler
 from PIL import Image
 
 import torch
@@ -26,6 +27,335 @@ w, h = 432, 240     # default acc. test setting in e2fgvi for davis dataset and 
 ref_length = 10     # non-local frames的步幅间隔，此处为每10帧取1帧NLF
 neighbor_stride = 5     # local frames的窗口大小，加上自身则窗口大小为6
 default_fps = 24
+
+
+def read_cfg(args):
+    """read lite-MFN cfg from config file"""
+    # loading configs
+    config = json.load(open(args.cfg_path))
+
+    # # # # pass config to args # # # #
+    # REPLACE OLD ARGS
+    args.dataset = config['train_data_loader']['name']
+    args.data_root = config['train_data_loader']['data_root']
+    args.output_size = [432, 240]
+    args.output_size[0], args.output_size[1] = (config['train_data_loader']['w'], config['train_data_loader']['h'])
+    args.model_win_size = config['model']['window_size']
+    args.model_output_size = config['model']['output_size']
+
+    args.max_mem_len = config['model'].get('max_mem_len', 1)
+    args.compression_factor = config['model'].get('compression_factor', 1)
+
+    # 是否使用spynet作为光流补全网络，目前仅用于消融实验
+    config['model']['spy_net'] = config['model'].get('spy_net', 0)
+    if config['model']['spy_net'] != 0:
+        # default for FlowLens-S
+        args.spy_net = True
+    else:
+        # default for FlowLens
+        args.spy_net = False
+
+    args.flow_res = config['model'].get('flow_res', 0.25)  # 默认在1/4分辨率计算光流
+
+    if config['model']['memory'] != 0:
+        args.memory = True
+    else:
+        args.memory = False
+
+    if config['model']['net'] == 'lite-MFN' or config['model']['net'] == 'large-MFN':
+
+        config['model']['fusion_recurrent'] = config['model'].get('fusion_recurrent', 0)  # 默认不循环融合特征
+        if config['model']['fusion_recurrent'] != 0:
+            args.fusion_recurrent = True
+        else:
+            # default manner
+            args.fusion_recurrent = False
+
+        # 加载E2FGVI-HQ的预训练权重
+        config['model']['load_e2fgvi'] = config['model'].get('load_e2fgvi', 0)
+        if config['model']['load_e2fgvi'] != 0:
+            args.load_e2fgvi = True
+        else:
+            # default
+            args.load_e2fgvi = False
+
+        if config['model']['skip_dcn'] != 0:
+            args.skip_dcn = True
+        else:
+            args.skip_dcn = False
+
+        if config['model']['flow_guide'] != 0:
+            args.flow_guide = True
+        else:
+            args.flow_guide = False
+
+        if config['model']['token_fusion'] != 0:
+            args.token_fusion = True
+        else:
+            args.token_fusion = False
+
+        if config['model']['token_fusion_simple'] != 0:
+            args.token_fusion_simple = True
+        else:
+            args.token_fusion_simple = False
+
+        if config['model']['fusion_skip_connect'] != 0:
+            args.fusion_skip_connect = True
+        else:
+            args.fusion_skip_connect = False
+
+        if args.memory:
+            # 额外输入记忆力需要的参数
+            # 是否使用空间池化压缩记忆缓存
+            if config['model']['mem_pool'] != 0:
+                args.mem_pool = True
+            else:
+                args.mem_pool = False
+
+            # 是否仅存储局部帧的记忆kv
+            if config['model']['store_lf'] != 0:
+                args.store_lf = True
+            else:
+                args.store_lf = False
+
+            # 是否在增强前对齐缓存和当前帧的kv
+            if config['model']['align_cache'] != 0:
+                args.align_cache = True
+            else:
+                args.align_cache = False
+
+            # 是否在对齐时对token通道分组进行，来实现sub-token的对齐
+            if config['model']['sub_token_align'] != 0:
+                args.sub_token_align = True
+                args.sub_factor = config['model']['sub_token_align']
+            else:
+                args.sub_token_align = False
+                args.sub_factor = 1
+
+            # 是否只为一半的层装备记忆力来节省显存消耗
+            if config['model']['half_memory'] != 0:
+                args.half_memory = True
+            else:
+                args.half_memory = False
+
+            # 是否只有最后一层blk装备记忆力来节省显存消耗，避免记忆干扰当前帧的特征提取
+            if config['model']['last_memory'] != 0:
+                args.last_memory = True
+            else:
+                args.last_memory = False
+
+            # 是否只有第一层blk装备记忆力
+            if config['model']['early_memory'] != 0:
+                args.early_memory = True
+            else:
+                args.early_memory = False
+
+            # 是否只有中间blk装备记忆力
+            config['model']['middle_memory'] = config['model'].get('middle_memory', 0)
+            if config['model']['middle_memory'] != 0:
+                args.middle_memory = True
+            else:
+                # default
+                args.middle_memory = False
+
+            # 是否使用cross attention融合记忆与当前特征(在Nh Nw维度流动信息)
+            if config['model']['cross_att'] != 0:
+                args.cross_att = True
+            else:
+                args.cross_att = False
+
+            # 是否对时序上的信息也使用cross attention融合(额外在T维度流动信息)
+            if config['model']['time_att'] != 0:
+                args.time_att = True
+            else:
+                args.time_att = False
+
+            # 是否在时序融合信息的时候解耦时空，降低计算复杂度
+            if config['model']['time_deco'] != 0:
+                args.time_deco = True
+            else:
+                args.time_deco = False
+
+            # 是否在聚合时空记忆时使用temporal focal attention
+            if config['model']['temp_focal'] != 0:
+                args.temp_focal = True
+            else:
+                args.temp_focal = False
+
+            # 是否在聚合时空记忆时使用cswin attention
+            if config['model']['cs_win'] != 0:
+                args.cs_win = True
+                # if config['model']['cs_win'] == 2:
+                #     # cs_win_strip决定了cswin的条带宽度，默认为1
+                #     args.cs_win_strip = 2
+                # else:
+                #     args.cs_win_strip = 1
+            else:
+                args.cs_win = False
+                # args.cs_win_strip = 1
+
+            # 是否使用attention聚合不同时间的记忆和当前特征，而不是使用线性层聚合记忆再attention
+            if config['model']['mem_att'] != 0:
+                args.mem_att = True
+            else:
+                args.mem_att = False
+
+            # 是否为cswin引入类似temporal focal的机制来增强注意力
+            if config['model']['cs_focal'] != 0:
+                args.cs_focal = True
+                if config['model']['cs_focal'] == 2:
+                    # 改进的正交全局滑窗策略，取到non-local的focal窗口
+                    # 现在默认都是v2了，v1已经被淘汰
+                    args.cs_focal_v2 = True
+                else:
+                    raise Exception('Focal v1 has been given up.')
+            else:
+                args.cs_focal = False
+                args.cs_focal_v2 = False
+        else:
+            args.mem_pool = False
+            args.store_lf = False
+            args.align_cache = False
+            args.sub_token_align = False
+            args.sub_factor = 1
+            args.early_memory = False
+            args.half_memory = False
+            args.last_memory = False
+            args.middle_memory = False
+            args.cross_att = False
+            args.time_att = False
+            args.time_deco = False
+            args.temp_focal = False
+            args.cs_win = False
+            args.mem_att = False
+            args.cs_focal = False
+            args.cs_focal_v2 = False
+
+        # 是否使用3D deco focav2 cswin替换temporal focal trans主干
+        if config['model']['cs_trans'] != 0:
+            args.cs_trans = True
+        else:
+            args.cs_trans = False
+
+        # 是否使用MixF3N代替F3N，目前对两种transformer主干都生效
+        if config['model']['mix_f3n'] != 0:
+            args.mix_f3n = True
+        else:
+            args.mix_f3n = False
+
+        # 是否使用FFN代替F3N，仅用于消融实验
+        config['model']['ffn'] = config['model'].get('ffn', 0)
+        if config['model']['ffn'] != 0:
+            args.ffn = True
+        else:
+            # default
+            args.ffn = False
+
+        # 是否使用MixFFN代替F3N，仅用于消融实验，来自于SegFormer
+        config['model']['mix_ffn'] = config['model'].get('mix_ffn', 0)
+        if config['model']['mix_ffn'] != 0:
+            args.mix_ffn = True
+        else:
+            # default
+            args.mix_ffn = False
+
+        # 定义transformer的深度
+        if config['model']['depths'] != 0:
+            args.depths = config['model']['depths']
+        else:
+            # 使用网络默认的深度
+            args.depths = None
+
+        # 定义trans主干不同层的head数量
+        if config['model']['head_list'] != 0:
+            args.head_list = config['model']['head_list']
+        else:
+            # 使用网络默认的head数量，也就是每层4个
+            args.head_list = []
+
+        # 定义不同的stage拥有多少个block
+        if config['model']['blk_list'] != 0:
+            args.blk_list = config['model']['blk_list']
+        else:
+            # 使用网络默认的blk数量，也就是深度的数量
+            args.blk_list = []
+
+        # 定义trans block的dim
+        if config['model']['hide_dim'] != 0:
+            args.hide_dim = config['model']['hide_dim']
+        else:
+            # 使用网络默认的blk数量，也就是深度的数量
+            args.hide_dim = None
+
+        # 定义trans block的window个数(token除以window划分大小)
+        if config['model']['window_size'] != 0:
+            args.window_size = config['model']['window_size']
+        else:
+            # 使用网络默认的window
+            args.window_size = None
+
+        # # 定义trans block的输出大小
+        # if config['model']['output_size'] != 0:
+        #     args.output_size = config['model']['output_size']
+        # else:
+        #     # 使用网络默认的output_size
+        #     args.output_size = None
+
+        # 定义是大模型还是小模型
+        if config['model']['small_model'] != 0:
+            args.small_model = True
+        else:
+            args.small_model = False
+
+        # 是否冻结dcn参数
+        config['model']['freeze_dcn'] = config['model'].get('freeze_dcn', 0)
+        if config['model']['freeze_dcn'] != 0:
+            args.freeze_dcn = True
+        else:
+            # default
+            args.freeze_dcn = False
+
+        if args.cs_trans:
+            # cs trans 主干需要的参数
+
+            # 是否给attention加一个CONV path，目前仅对cs win trans block生效
+            if config['model']['conv_path'] != 0:
+                args.conv_path = True
+            else:
+                args.conv_path = False
+
+            # 是否使用滑窗逻辑强化cs win，只对于条带宽度不为1时生效
+            # 顺便更改了条带宽度不为1的池化逻辑，直接池化到条带的宽度，提高数据利用率(原来补0)
+            if config['model']['cs_sw'] != 0:
+                args.cs_sw = True
+            else:
+                args.cs_sw = False
+
+            # 是否为cswin引入不同宽度条带池化的机制来增强注意力，只对初始条带宽度1有效
+            if config['model']['pool_strip'] != 0:
+                args.pool_strip = True
+                if config['model']['pool_strip'] == 1:
+                    # 使用什么宽度的条带来池化增强当前窗口
+                    args.pool_sw = 1
+                elif config['model']['pool_strip'] == 2:
+                    args.pool_sw = 2
+                elif config['model']['pool_strip'] == 4:
+                    args.pool_sw = 4
+                else:
+                    raise Exception('Not implement.')
+            else:
+                args.pool_strip = False
+                args.pool_sw = 2
+
+            # 定义新trans主干不同层的条带宽度
+            if config['model']['sw_list'] != 0:
+                args.sw_list = config['model']['sw_list']
+            else:
+                # 使用网络默认的深度
+                args.sw_list = []
+    # # # # pass config to args # # # #
+
+    return args
 
 
 # sample reference frames from the whole video
@@ -116,13 +446,13 @@ def get_ref_index_mem_random(neighbor_ids, video_length, num_ref_frame=3, before
 
 
 def main_worker(args):
+    args = read_cfg(args=args)      # 读取网络的所有设置
     w = args.output_size[0]
     h = args.output_size[1]
     args.size = (w, h)
+
     # set up datasets and data loader
     # default result
-    # assert (args.dataset == 'davis') or args.dataset == 'youtube-vos', \
-    #     f"{args.dataset} dataset is not supported"
     test_dataset = TestDataset(args)
 
     test_loader = DataLoader(test_dataset,
@@ -134,8 +464,27 @@ def main_worker(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     net = importlib.import_module('model.' + args.model)
     try:
-        # 加载一些尺寸窗口设置
-        model = net.InpaintGenerator(window_size=args.model_win_size, output_size=args.model_output_size).to(device)
+        if args.model == 'lite-MFN' or args.model == 'large-MFN':
+            model = net.InpaintGenerator(
+                skip_dcn=args.skip_dcn, freeze_dcn=args.freeze_dcn,
+                spy_net=args.spy_net, flow_guide=args.flow_guide, flow_res=args.flow_res,
+                token_fusion=args.token_fusion, fusion_recurrent=args.fusion_recurrent,
+                token_fusion_simple=args.token_fusion_simple, fusion_skip_connect=args.fusion_skip_connect,
+                memory=args.memory, max_mem_len=args.max_mem_len,
+                compression_factor=args.compression_factor, mem_pool=args.mem_pool,
+                store_lf=args.store_lf, align_cache=args.align_cache, sub_token_align=args.sub_token_align,
+                sub_factor=args.sub_factor, half_memory=args.half_memory, last_memory=args.last_memory,
+                early_memory=args.early_memory, middle_memory=args.middle_memory,
+                cross_att=args.cross_att, time_att=args.time_att, time_deco=args.time_deco,
+                temp_focal=args.temp_focal, cs_win=args.cs_win, mem_att=args.mem_att, cs_focal=args.cs_focal,
+                cs_focal_v2=args.cs_focal_v2,
+                cs_trans=args.cs_trans, mix_f3n=args.mix_f3n, ffn=args.ffn, mix_ffn=args.mix_ffn,
+                depths=args.depths, head_list=args.head_list,
+                blk_list=args.blk_list, hide_dim=args.hide_dim,
+                window_size=args.model_win_size, output_size=args.model_output_size, small_model=args.small_model).to(device)
+        else:
+            # 加载一些尺寸窗口设置
+            model = net.InpaintGenerator(window_size=args.model_win_size, output_size=args.model_output_size).to(device)
     except:
         try:
             # 加载一些尺寸窗口设置,sttn和fuseformer不需要window_size参数
@@ -652,10 +1001,11 @@ def main_worker(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='FlowLens')
+    parser.add_argument('--cfg_path', default='configs/KITTI360EX-I_FlowLens_early_small_v2.json')
     parser.add_argument('--dataset',
                         choices=['davis', 'youtube-vos', 'pal', 'KITTI360-EX'],
                         type=str)       # 相当于train的‘name’
-    parser.add_argument('--data_root', type=str, required=True)
+    parser.add_argument('--data_root', type=str)
     parser.add_argument('--output_size', type=int, nargs='+', default=[432, 240])
     parser.add_argument('--object', action='store_true', default=False)     # if true, use object removal mask
     parser.add_argument('--fov',
@@ -691,8 +1041,9 @@ if __name__ == '__main__':
         args.past_ref = True
 
     if args.profile:
-        profile = line_profiler.LineProfiler(main_worker)  # 把函数传递到性能分析器
-        profile.enable()  # 开始分析
+        # profile = line_profiler.LineProfiler(main_worker)  # 把函数传递到性能分析器
+        # profile.enable()  # 开始分析
+        pass
 
     # if args.timing:
     #     torch.cuda.synchronize()
@@ -708,5 +1059,6 @@ if __name__ == '__main__':
     #           f'{time_sum/frame_num}')
 
     if args.profile:
-        profile.disable()  # 停止分析
-        profile.print_stats(sys.stdout)  # 打印出性能分析结果
+        # profile.disable()  # 停止分析
+        # profile.print_stats(sys.stdout)  # 打印出性能分析结果
+        pass

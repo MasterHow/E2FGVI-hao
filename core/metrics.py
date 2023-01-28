@@ -1,4 +1,6 @@
 import numpy as np
+import skimage
+import skimage.metrics
 from skimage import measure
 from scipy import linalg
 from thop import profile
@@ -86,11 +88,20 @@ def calc_psnr_and_ssim(img1, img2):
     img2 = img2.astype(np.float64)
 
     psnr = calculate_psnr(img1, img2)
-    ssim = measure.compare_ssim(img1,
-                                img2,
-                                data_range=255,
-                                multichannel=True,
-                                win_size=65)
+    if skimage.__version__ != '0.19.3':
+        # old version skimage
+        ssim = measure.compare_ssim(img1,
+                                    img2,
+                                    data_range=255,
+                                    multichannel=True,
+                                    win_size=65)
+    else:
+        # new version skimage
+        ssim = skimage.metrics.structural_similarity(img1,
+                                                     img2,
+                                                     data_range=255,
+                                                     multichannel=True,
+                                                     win_size=65)
 
     return psnr, ssim
 
