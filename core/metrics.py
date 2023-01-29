@@ -34,11 +34,15 @@ def get_parameter(net):
 def get_flops(net):
     myParameterlist = get_parameter(net)
 
-    myInput = torch.rand(1, 8, 3, 240, 432).float().cuda()     # b t c h w
+    # myInput = torch.rand(1, 21, 3, 240, 432).float().cuda()   # VI-Trans
+    # myInput = torch.rand(1, 4, 3, 240, 432).float().cuda()    # recurrent
+    myInput = torch.rand(1, 8, 3, 240, 432).float().cuda()     # b t c h w for default test
     # myInput = torch.rand(1, 8, 3, 432, 240).float().cuda()  # b t c h w  for sttn, hw和其他人是反着的
     # myMask = torch.rand(1, 8, 1, 432, 240).float().cuda()  # b t c h w  for sttn
 
-    flops, params = profile(net, inputs=(myInput, 5))   # flowlens+e2fgvi 5 是local frames个数
+    # flops, params = profile(net, inputs=(myInput, 11))    # VI-Trans
+    # flops, params = profile(net, inputs=(myInput, 1))     # recurrent
+    flops, params = profile(net, inputs=(myInput, 5))   # flowlens+e2fgvi 5 是local frames个数 for default test
     # flops, params = profile(net, inputs=(myInput,))  # fuseformer
     # flops, params = profile(net, inputs=(myInput, myMask))  # sttn
 

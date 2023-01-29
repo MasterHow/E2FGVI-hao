@@ -25,8 +25,7 @@ w, h = 432, 240     # default acc. test setting in e2fgvi for davis dataset and 
 # w, h = 864, 480     # davis res 480x854
 # w, h = 320, 240     # pal test
 ref_length = 10     # non-local frames的步幅间隔，此处为每10帧取1帧NLF
-neighbor_stride = 5     # local frames的窗口大小，加上自身则窗口大小为6
-default_fps = 24
+neighbor_stride = 5     # 窗口的stride, 5 for default, 1 for recurrent mode
 
 
 def read_cfg(args):
@@ -40,8 +39,8 @@ def read_cfg(args):
     args.data_root = config['train_data_loader']['data_root']
     args.output_size = [432, 240]
     args.output_size[0], args.output_size[1] = (config['train_data_loader']['w'], config['train_data_loader']['h'])
-    args.model_win_size = config['model']['window_size']
-    args.model_output_size = config['model']['output_size']
+    args.model_win_size = config['model'].get('window_size', None)
+    args.model_output_size = config['model'].get('output_size', None)
 
     args.max_mem_len = config['model'].get('max_mem_len', 1)
     args.compression_factor = config['model'].get('compression_factor', 1)
@@ -288,6 +287,7 @@ def read_cfg(args):
             args.hide_dim = None
 
         # 定义trans block的window个数(token除以window划分大小)
+        config['model']['window_size'] = config['model'].get('window_size', 0)
         if config['model']['window_size'] != 0:
             args.window_size = config['model']['window_size']
         else:
@@ -505,12 +505,12 @@ def main_worker(args):
 
     # 计算FLOPs
     if args.FLOPs:
-        # myflops, flops, params = get_flops(model)
-        # print(myflops)
+        myflops, flops, params = get_flops(model)   # paper FLOPs
+        print(myflops)
 
         # input_shape = [1, 8, 3, 240, 432]
-        input_shape = (8, 3, 240, 432)
-        flops, params = get_model_complexity_info(model, input_shape)
+        # input_shape = (8, 3, 240, 432)
+        # flops, params = get_model_complexity_info(model, input_shape)
 
         print('#############FLOPs:'+str(flops))
         print('#############PARAMES:'+str(params))
@@ -558,6 +558,7 @@ def main_worker(args):
 
         if args.memory:
             # 进入新的视频时清空记忆缓存
+            # TODO: 更正记忆缓存清除逻辑
             for blk in model.transformer:
                 try:
                     blk.attn.m_k = []
@@ -581,12 +582,16 @@ def main_worker(args):
         # complete holes by our model
         # 当这个循环走完的时候，一段视频已经被补全了
         for f in range(0, video_length, neighbor_stride):
-            if not args.memory:
+            if not args.memory_logic:
                 # default id with different T
-                neighbor_ids = [
-                    i for i in range(max(0, f - neighbor_stride),
-                                     min(video_length, f + neighbor_stride + 1))
-                ]   # neighbor_ids即为Local Frames, 局部帧
+                if not args.recurrent:
+                    neighbor_ids = [
+                        i for i in range(max(0, f - neighbor_stride),
+                                         min(video_length, f + neighbor_stride + 1))
+                    ]   # neighbor_ids即为Local Frames, 局部帧
+                else:
+                    # 在recurrent模式下，每次局部窗口都为1
+                    neighbor_ids = [f]
             else:
                 if args.same_memory:
                     # 尽可能与e2fgvi的原测试逻辑一致
@@ -628,18 +633,22 @@ def main_worker(args):
 
                 else:
                     # 与记忆力模型的训练逻辑一致
-                    if video_length < (f + neighbor_stride):
-                        neighbor_ids = [
-                            i for i in range(f, video_length)
-                        ]  # 时间上不重叠的窗口，每个局部帧只会被计算一次，视频尾部可能不足5帧局部帧，复制最后一帧补全数量
-                        for repeat_idx in range(0, neighbor_stride - len(neighbor_ids)):
-                            neighbor_ids.append(neighbor_ids[-1])
+                    if not args.recurrent:
+                        if video_length < (f + neighbor_stride):
+                            neighbor_ids = [
+                                i for i in range(f, video_length)
+                            ]  # 时间上不重叠的窗口，每个局部帧只会被计算一次，视频尾部可能不足5帧局部帧，复制最后一帧补全数量
+                            for repeat_idx in range(0, neighbor_stride - len(neighbor_ids)):
+                                neighbor_ids.append(neighbor_ids[-1])
+                        else:
+                            neighbor_ids = [
+                                i for i in range(f, f + neighbor_stride)
+                            ]  # 时间上不重叠的窗口，每个局部帧只会被计算一次
                     else:
-                        neighbor_ids = [
-                            i for i in range(f, f + neighbor_stride)
-                        ]  # 时间上不重叠的窗口，每个局部帧只会被计算一次
+                        # 在recurrent模式下，每次局部窗口都为1
+                        neighbor_ids = [f]
 
-            if not args.memory:
+            if not args.memory_logic:
                 # default test set, 局部帧与非局部帧不会输入同样id的帧
                 ref_ids = get_ref_index(neighbor_ids, video_length)  # ref_ids即为Non-Local Frames, 非局部帧
 
@@ -749,7 +758,7 @@ def main_worker(args):
         # TODO: 让这些额外推理与past_ref兼容
         if args.memory_double:
             for f in range(neighbor_stride//2, video_length, neighbor_stride):
-                if not args.memory:
+                if not args.memory_logic:
                     # default id with different T
                     neighbor_ids = [
                         i for i in range(max(neighbor_stride//2, f - neighbor_stride),
@@ -789,7 +798,7 @@ def main_worker(args):
                                 i for i in range(f, f + neighbor_stride)
                             ]  # 时间上不重叠的窗口，每个局部帧只会被计算一次
 
-                if not args.memory:
+                if not args.memory_logic:
                     # default test set, 局部帧与非局部帧不会输入同样id的帧
                     ref_ids = get_ref_index(neighbor_ids, video_length)  # ref_ids即为Non-Local Frames, 非局部帧
 
@@ -865,7 +874,7 @@ def main_worker(args):
             # 丧心病狂推理5次来刷精度
             for sliding_start in range(1, neighbor_stride):
                 for f in range(sliding_start, video_length, neighbor_stride):
-                    if not args.memory:
+                    if not args.memory_logic:
                         raise Exception('Not support aug with no memory models')
                     else:
                         if args.same_memory:
@@ -883,7 +892,7 @@ def main_worker(args):
                                     i for i in range(f, f + neighbor_stride)
                                 ]  # 时间上不重叠的窗口，每个局部帧只会被计算一次
 
-                    if not args.memory:
+                    if not args.memory_logic:
                         raise Exception('Not support aug with no memory models')
                     else:
                         # 为了保证时间维度一致, 允许输入相同id的帧
@@ -1020,7 +1029,8 @@ if __name__ == '__main__':
     parser.add_argument('--timing', action='store_true', default=False)
     parser.add_argument('--profile', action='store_true', default=False)
     parser.add_argument('--good_fusion', action='store_true', default=False, help='using my fusion strategy')
-    parser.add_argument('--memory', action='store_true', default=False, help='test with memory ability')
+    parser.add_argument('--memory_logic', action='store_true', default=False,
+                        help='test with memory logic, support for VI-Trans and FlowLens')
     parser.add_argument('--same_memory', action='store_true', default=False,
                         help='test with memory ability in E2FGVI style, not work with --memory_double')
     parser.add_argument('--same_id', action='store_true', default=False,
@@ -1034,6 +1044,8 @@ if __name__ == '__main__':
     parser.add_argument('--model_output_size', type=int, nargs='+', default=[60, 108])
     parser.add_argument('--FLOPs', action='store_true', default=False,
                         help='calc FLOPs of the model')
+    parser.add_argument('--recurrent', action='store_true', default=False,
+                        help='keep window = 1, stride = 1 to not use future info')
     args = parser.parse_args()
 
     if args.dataset == 'KITTI360-EX':

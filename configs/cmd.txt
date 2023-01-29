@@ -3009,13 +3009,29 @@ All average forward run time: (0.420654) per frame
 [same memory, fov10] Finish evaluation... Average Frame PSNR/SSIM/VFID: 37.41/0.9966/0.015
 [same memory, fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 30.36/0.9840/0.048 --All average forward run time: (0.061496) per frame
 [same memory] 37.07 0.9932 0.23
+----
 [memory] Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.25/0.9800/0.062 --All average forward run time: (0.022553) per frame
 结果和此前一致
 
 ## 测试推理window和stride对于结果的影响
-N=8
-# E2FGVI
-[offline future sample, fov5]
-[offline future sample, fov10]
-[offline future sample, fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.41/0.9800/0.043 --All average forward run time: (0.097620) per frame
-[offline future sample]
+# E2FGVI e2fgvi_KEXI_250k.pth KITTI360EX-I_e2fgvi_baseline
+[offline future sample (default of VI-Trans), fov5] Finish evaluation... Average Frame PSNR/SSIM/VFID: 43.41/0.9991/0.004
+[offline future sample (default of VI-Trans), fov10] Finish evaluation... Average Frame PSNR/SSIM/VFID: 37.25/0.9964/0.014
+[offline future sample (default of VI-Trans), fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 29.41/0.9800/0.043 --All average forward run time: (0.097620) per frame
+[offline future sample] 36.69 0.9918 0.20
+----
+(--recurrent)
+[recurrent, window size 1, slide 1, future sample (every 10 frame), fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.84/0.9665/0.065 --All average forward run time: (0.211274) per frame
+----
+(--recurrent, --memory_logic)
+[recurrent, window size 1, slide 1, past sample, fov5] Finish evaluation... Average Frame PSNR/SSIM/VFID: 40.53/0.9982/0.006
+[recurrent, window size 1, slide 1, past sample, fov10] Finish evaluation... Average Frame PSNR/SSIM/VFID: 34.26/0.9931/0.025
+[recurrent, window size 1, slide 1, past sample, fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 26.89/0.9669/0.077 --All average forward run time: (0.082695) per frame
+[recurrent, window size 1, slide 1, past sample] 33.89 0.9861 0.036
+
+# FlowLens-S FlowLens-S_300k.pth KITTI360EX-I_FlowLens_early_small_v2.json
+(--recurrent, --memory_logic)
+[recurrent, window size 1, slide 1, past sample, fov5] Finish evaluation... Average Frame PSNR/SSIM/VFID: 40.85/0.9983/0.006
+[recurrent, window size 1, slide 1, past sample, fov10] Finish evaluation... Average Frame PSNR/SSIM/VFID: 34.48/0.9935/0.023
+[recurrent, window size 1, slide 1, past sample, fov20] Finish evaluation... Average Frame PSNR/SSIM/VFID: 27.57/0.9709/0.083 --All average forward run time: (0.044497) per frame
+[recurrent, window size 1, slide 1, past sample] 34.30 0.9875 0.037
