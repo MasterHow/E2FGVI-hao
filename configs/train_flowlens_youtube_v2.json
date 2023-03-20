@@ -1,13 +1,13 @@
 {
-    "seed": 2021,
+    "seed": 2023,
     "save_dir": "release_model/",
     "train_data_loader": {
         "sequence_load": 1,
         "name": "youtube-vos",
-        "data_root": "datasets",
+        "data_root": "/workspace/mnt/storage/shihao/VI",
         "w": 432,
         "h": 240,
-        "num_local_frames": 5,
+        "num_local_frames": 11,
         "num_ref_frames": 3
     },
     "losses": {
@@ -19,12 +19,12 @@
     },
     "model": {
         "net": "lite-MFN",
-        "load_e2fgvi": 1,
+        "load_e2fgvi": 0,
         "no_dis": 0,
         "spy_net": 0,
         "mfn_teach": 1,
         "skip_dcn": 0,
-        "freeze_dcn": 1,
+        "freeze_dcn": 0,
         "flow_guide": 0,
         "token_fusion": 0,
         "token_fusion_simple": 0,
@@ -70,7 +70,7 @@
         "beta2": 0.99,
         "lr": 1e-4,
         "batch_size": 8,
-        "num_workers": 2,
+        "num_workers": 4,
         "log_freq": 100,
         "save_freq": 5e3,
         "iterations": 50e4,
